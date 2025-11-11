@@ -1,4 +1,4 @@
-# Dokument wymagań produktu (PRD) - Fiszki AI
+# Dokument wymagań produktu (PRD) - AI Cards
 
 ## 1. Przegląd produktu
 
