@@ -2,11 +2,39 @@
 
 ## Overview
 
-This document defines the complete REST API specification for the AI Cards application MVP. The API is designed to work with Supabase as the backend, following RESTful principles and implementing Row Level Security (RLS) for data protection.
+This document defines the complete REST API specification for the AI Cards application MVP. The API is designed to work with Supabase as the backend, following RESTful principles.
 
 **Base URL**: `/api`  
-**Authentication**: JWT Bearer Token (Supabase Auth)  
-**Content Type**: `application/json`
+**Content Type**: `application/json`  
+**Development Mode**: Authentication is DISABLED for initial development. RLS policies are disabled. All operations use a default test user ID.  
+**Production Mode**: Will require JWT Bearer Token (Supabase Auth) and RLS policies enabled.
+
+### Development Configuration
+
+For MVP development phase:
+- **Authentication**: Not required (will be added later)
+- **RLS Policies**: Disabled
+- **User ID**: Hard-coded test UUID for all operations (e.g., `00000000-0000-0000-0000-000000000001`)
+- **Authorization headers**: Not required - all endpoints work without JWT tokens
+- **Error codes**: 401 Unauthorized errors are not implemented in dev mode
+
+### Implementation Notes for Dev Mode
+
+1. **Hardcoded User ID**: Use a constant UUID in your API implementation:
+   ```typescript
+   const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
+   ```
+
+2. **Skip Auth Checks**: All endpoints accept requests without checking for authentication
+
+3. **Database Setup**: Ensure RLS policies are disabled in your migrations:
+   ```sql
+   ALTER TABLE flashcards DISABLE ROW LEVEL SECURITY;
+   ALTER TABLE generations DISABLE ROW LEVEL SECURITY;
+   ALTER TABLE generation_error_logs DISABLE ROW LEVEL SECURITY;
+   ```
+
+4. **Migration to Production**: See Section 11 for steps to enable authentication
 
 ---
 
@@ -31,17 +59,12 @@ This document defines the complete REST API specification for the AI Cards appli
 
 **Description**: Retrieves paginated list of user's flashcards sorted by creation date (newest first).
 
-**Authentication**: Required
+**Authentication**: Not required in dev mode
 
 **Query Parameters**:
 - `page` (optional, integer, default: 1): Page number for pagination
 - `limit` (optional, integer, default: 20, max: 100): Number of items per page
 - `source` (optional, enum): Filter by source type (`manual`, `ai_generated`, `ai_generated_edited`)
-
-**Request Headers**:
-```
-Authorization: Bearer <jwt_token>
-```
 
 **Response Body** (200 OK):
 ```json
@@ -68,15 +91,6 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses**:
-- `401 Unauthorized`: Missing or invalid JWT token
-```json
-{
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "Authentication required"
-  }
-}
-```
 - `400 Bad Request`: Invalid query parameters
 ```json
 {
@@ -95,13 +109,14 @@ Authorization: Bearer <jwt_token>
 
 **Description**: Creates a new flashcard (manual or from AI generation).
 
-**Authentication**: Required
+**Authentication**: Not required in dev mode
 
 **Request Headers**:
 ```
-Authorization: Bearer <jwt_token>
 Content-Type: application/json
 ```
+
+**Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Request Body**:
 ```json
@@ -146,7 +161,6 @@ Content-Type: application/json
 ```
 
 **Error Responses**:
-- `401 Unauthorized`: Missing or invalid JWT token
 - `400 Bad Request`: Validation errors
 ```json
 {
@@ -188,13 +202,14 @@ Content-Type: application/json
 
 **Description**: Creates multiple flashcards at once (used for "Accept All" feature).
 
-**Authentication**: Required
+**Authentication**: Not required in dev mode
 
 **Request Headers**:
 ```
-Authorization: Bearer <jwt_token>
 Content-Type: application/json
 ```
+
+**Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Request Body**:
 ```json
@@ -262,7 +277,6 @@ Content-Type: application/json
 ```
 
 **Error Responses**:
-- `401 Unauthorized`: Missing or invalid JWT token
 - `400 Bad Request`: Validation errors (includes index of failing flashcard)
 ```json
 {
@@ -290,15 +304,14 @@ Content-Type: application/json
 
 **Description**: Retrieves a specific flashcard by ID.
 
-**Authentication**: Required
+**Authentication**: Not required in dev mode
 
 **URL Parameters**:
 - `id` (required, integer): Flashcard ID
 
-**Request Headers**:
-```
-Authorization: Bearer <jwt_token>
-```
+**Request Headers**: None required in dev mode
+
+**Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Response Body** (200 OK):
 ```json
@@ -317,8 +330,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses**:
-- `401 Unauthorized`: Missing or invalid JWT token
-- `404 Not Found`: Flashcard not found or doesn't belong to user
+- `404 Not Found`: Flashcard not found
 ```json
 {
   "error": {
@@ -336,16 +348,17 @@ Authorization: Bearer <jwt_token>
 
 **Description**: Updates an existing flashcard's content. Automatically updates the source field based on the flashcard's origin.
 
-**Authentication**: Required
+**Authentication**: Not required in dev mode
 
 **URL Parameters**:
 - `id` (required, integer): Flashcard ID
 
 **Request Headers**:
 ```
-Authorization: Bearer <jwt_token>
 Content-Type: application/json
 ```
+
+**Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Request Body**:
 ```json
@@ -386,8 +399,7 @@ Content-Type: application/json
 ```
 
 **Error Responses**:
-- `401 Unauthorized`: Missing or invalid JWT token
-- `404 Not Found`: Flashcard not found or doesn't belong to user
+- `404 Not Found`: Flashcard not found
 - `400 Bad Request`: Validation errors
 ```json
 {
@@ -412,15 +424,14 @@ Content-Type: application/json
 
 **Description**: Permanently deletes a flashcard.
 
-**Authentication**: Required
+**Authentication**: Not required in dev mode
 
 **URL Parameters**:
 - `id` (required, integer): Flashcard ID
 
-**Request Headers**:
-```
-Authorization: Bearer <jwt_token>
-```
+**Request Headers**: None required in dev mode
+
+**Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Response Body** (200 OK):
 ```json
@@ -433,8 +444,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses**:
-- `401 Unauthorized`: Missing or invalid JWT token
-- `404 Not Found`: Flashcard not found or doesn't belong to user
+- `404 Not Found`: Flashcard not found
 ```json
 {
   "error": {
@@ -454,13 +464,14 @@ Authorization: Bearer <jwt_token>
 
 **Description**: Generates flashcard candidates from source text using AI. Creates generation log and returns temporary candidates (not saved to database).
 
-**Authentication**: Required
+**Authentication**: Not required in dev mode
 
 **Request Headers**:
 ```
-Authorization: Bearer <jwt_token>
 Content-Type: application/json
 ```
+
+**Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Request Body**:
 ```json
@@ -477,7 +488,6 @@ Content-Type: application/json
 **Business Logic**:
 1. Validate source text length (100-10,000 characters)
 2. Calculate SHA-256 hash of source text
-3. Check for duplicate recent generation (optional optimization - if same hash exists in last 5 minutes, return cached results or error)
 4. Call OpenRouter API with source text
 5. Parse AI response into flashcard candidates
 6. Create generation log record with:
@@ -521,7 +531,6 @@ Content-Type: application/json
 ```
 
 **Error Responses**:
-- `401 Unauthorized`: Missing or invalid JWT token
 - `400 Bad Request`: Validation errors
 ```json
 {
@@ -575,16 +584,15 @@ Content-Type: application/json
 
 **Description**: Retrieves paginated list of user's generation sessions with analytics data.
 
-**Authentication**: Required
+**Authentication**: Not required in dev mode
 
 **Query Parameters**:
 - `page` (optional, integer, default: 1): Page number
 - `limit` (optional, integer, default: 20, max: 100): Items per page
 
-**Request Headers**:
-```
-Authorization: Bearer <jwt_token>
-```
+**Request Headers**: None required in dev mode
+
+**Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Response Body** (200 OK):
 ```json
@@ -615,7 +623,7 @@ Authorization: Bearer <jwt_token>
 **Note**: `acceptance_rate` is calculated as `(accepted_unedited_count + accepted_edited_count) / generated_count`.
 
 **Error Responses**:
-- `401 Unauthorized`: Missing or invalid JWT token
+None specific (standard error format applies if needed)
 
 ---
 
@@ -625,15 +633,14 @@ Authorization: Bearer <jwt_token>
 
 **Description**: Retrieves details of a specific generation session including associated flashcards.
 
-**Authentication**: Required
+**Authentication**: Not required in dev mode
 
 **URL Parameters**:
 - `id` (required, integer): Generation ID
 
-**Request Headers**:
-```
-Authorization: Bearer <jwt_token>
-```
+**Request Headers**: None required in dev mode
+
+**Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Response Body** (200 OK):
 ```json
@@ -663,8 +670,7 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Error Responses**:
-- `401 Unauthorized`: Missing or invalid JWT token
-- `404 Not Found`: Generation not found or doesn't belong to user
+- `404 Not Found`: Generation not found
 
 ---
 
@@ -676,7 +682,7 @@ Authorization: Bearer <jwt_token>
 
 **Description**: Retrieves paginated list of generation error logs for troubleshooting and analytics. This endpoint is intended for admin users or internal monitoring. It helps track AI generation failures and identify patterns.
 
-**Authentication**: Required (Admin access recommended for production)
+**Authentication**: Not required in dev mode (Admin access recommended for production)
 
 **Query Parameters**:
 - `page` (optional, integer, default: 1): Page number
@@ -686,10 +692,9 @@ Authorization: Bearer <jwt_token>
 - `from_date` (optional, ISO 8601 date): Filter errors from this date
 - `to_date` (optional, ISO 8601 date): Filter errors until this date
 
-**Request Headers**:
-```
-Authorization: Bearer <jwt_token>
-```
+**Request Headers**: None required in dev mode
+
+**Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Response Body** (200 OK):
 ```json
@@ -733,7 +738,7 @@ Authorization: Bearer <jwt_token>
 - Debug user-reported generation issues
 
 **Error Responses**:
-- `401 Unauthorized`: Missing or invalid JWT token
+None specific (standard error format applies if needed)
 - `403 Forbidden`: User lacks admin permissions (if admin-only in production)
 - `400 Bad Request`: Invalid query parameters
 ```json
@@ -757,12 +762,11 @@ Authorization: Bearer <jwt_token>
 
 **Description**: Retrieves user's statistics and success metrics. This endpoint supports the PRD success metrics tracking.
 
-**Authentication**: Required
+**Authentication**: Not required in dev mode
 
-**Request Headers**:
-```
-Authorization: Bearer <jwt_token>
-```
+**Request Headers**: None required in dev mode
+
+**Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Response Body** (200 OK):
 ```json
@@ -787,21 +791,37 @@ Authorization: Bearer <jwt_token>
 - `average_acceptance_rate`: Average of all generation acceptance rates
 
 **Error Responses**:
-- `401 Unauthorized`: Missing or invalid JWT token
+None specific (standard error format applies if needed)
 
 ---
 ## 3. Authentication and Authorization
 
-### 3.1. Authentication Mechanism
+### 3.1. Development Mode (Current)
+
+**Status**: Authentication is **NOT IMPLEMENTED** in development mode
+
+**Implementation**:
+- All endpoints work without authentication
+- No JWT tokens required
+- Hardcoded user ID used for all operations: `00000000-0000-0000-0000-000000000001`
+- RLS policies are disabled
+
+### 3.2. Production Mode (Future)
 
 **Provider**: Supabase Auth  
-**Method**: JWT Bearer TokenAll endpoints (except authentication endpoints) require a valid JWT token in the `Authorization` header:
+**Method**: JWT Bearer Token
+
+All endpoints (except authentication endpoints) will require a valid JWT token in the `Authorization` header:
 
 ```
 Authorization: Bearer <jwt_token>
 ```
 
-### 3.2. Authentication Endpoints (Supabase Managed)
+See Section 11 for migration steps.
+
+### 3.3. Authentication Endpoints (Production Only - Supabase Managed)
+
+**Note**: These endpoints are NOT used in development mode. They will be enabled in production.
 
 These endpoints are provided by Supabase Auth and don't require custom implementation:
 
@@ -849,22 +869,24 @@ Content-Type: application/json
 }
 ```
 
-### 3.3. Authorization (Row Level Security)
+### 3.4. Authorization - Row Level Security (Production Only)
 
-**Implementation**: All data access is protected by PostgreSQL Row Level Security (RLS) policies defined in the database schema.
+**Development Mode**: RLS is **DISABLED**. All users can access all data using hardcoded user ID.
 
-**Enforcement**:
+**Production Mode**: All data access will be protected by PostgreSQL Row Level Security (RLS) policies defined in the database schema.
+
+**Production Enforcement**:
 - Every query automatically filters by `user_id = auth.uid()`
 - Users can only access their own flashcards, generations, and error logs
 - Supabase client automatically includes user context from JWT token
 
-**RLS Policies**:
+**RLS Policies** (defined in schema, but currently disabled):
 - `SELECT`: Users can view only their own data
 - `INSERT`: Users can create only their own data
 - `UPDATE`: Users can modify only their own data
 - `DELETE`: Users can delete only their own data
 
-### 3.4. Security Headers
+### 3.5. Security Headers
 
 All API responses include security headers:
 ```
@@ -919,11 +941,14 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
    - If source = 'ai_generated' or 'ai_generated_edited': 
      - generation_id MUST be provided (error if null)
      - generation_id MUST exist in database (error if not found)
-4. Insert flashcard with user_id from JWT and provided source value
-5. If source is AI-generated, update generation record:
+4. Get user_id:
+   - Dev mode: Use hardcoded DEV_USER_ID constant
+   - Production: Use user_id from JWT (locals.user.id)
+5. Insert flashcard with user_id and provided source value
+6. If source is AI-generated, update generation record:
    - If source = 'ai_generated': INCREMENT generations.accepted_unedited_count
    - If source = 'ai_generated_edited': INCREMENT generations.accepted_edited_count
-6. Return created flashcard
+7. Return created flashcard
 ```
 
 #### BL-3: Bulk Accept Flashcards
@@ -947,19 +972,22 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 When POST /api/generations fails:
 1. Catch error from OpenRouter API
 2. Extract error_code and error_message
-3. Create generation_error_logs record:
-   - user_id from JWT
+3. Get user_id (DEV_USER_ID in dev mode, or from JWT in production)
+4. Create generation_error_logs record:
+   - user_id
    - model used
    - source_text_hash
    - source_text_length
    - error_code
    - error_message
-4. Return user-friendly error message (not technical details)
+5. Return user-friendly error message (not technical details)
 ```
 
 #### BL-5: Update Flashcard
 ```
-1. Verify flashcard exists and belongs to current user (via RLS)
+1. Verify flashcard exists:
+   - Dev mode: Check flashcard belongs to DEV_USER_ID
+   - Production: RLS automatically filters by current user
 2. Validate at least one field (front or back) is provided
 3. Validate provided fields:
    - front: 1-200 chars, not empty/whitespace only
@@ -1066,34 +1094,6 @@ For MVP, version prefix is optional. Post-MVP, when breaking changes are introdu
 
 ---
 
-## 7. Testing Considerations
-
-### 7.1. Test User Accounts
-
-For development and testing, create test users:
-- `test@example.com` / `testpass123`
-- Use Supabase Auth to create test users
-- Seed database with sample flashcards and generations
-
-### 7.2. Mock AI Responses
-
-For testing without AI API costs:
-- Create mock generation endpoint: `POST /api/generations/mock`
-- Returns predefined candidates without calling OpenRouter
-- Use feature flag to enable/disable
-
-### 7.3. End-to-End Test Scenarios
-
-1. **Complete AI Generation Flow**:
-   - Generate candidates → Review → Accept some → Reject some → Verify database
-
-2. **Manual Flashcard Management**:
-   - Create → List → Update → Delete → Verify
-
-4. **Error Handling**:
-   - Invalid input → Rate limit → Generation failure → Auth failure
-
----
 
 ## 8. Success Metrics Support
 
@@ -1127,32 +1127,6 @@ Target: ai_adoption_rate >= 0.75
 
 **Data Source**: `flashcards.source` field
 
-## 10. Deployment and Environment Configuration
-
-### 10.1. Environment Variables
-
-Required environment variables:
-
-```bash
-# Supabase
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# OpenRouter AI
-OPENROUTER_API_KEY=your-openrouter-key
-OPENROUTER_API_URL=https://openrouter.ai/api/v1
-
-# Application
-NODE_ENV=production
-API_BASE_URL=https://api.yourdomain.com
-CORS_ORIGINS=https://yourdomain.com
-
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=60000
-RATE_LIMIT_MAX_REQUESTS=100
-```
-
 ### 10.2. CORS Configuration
 
 For Astro application running on same domain:
@@ -1176,6 +1150,150 @@ For Astro application running on same domain:
 - Database query performance
 
 **Tools**: Consider Sentry for error tracking, LogRocket for session replay
+
+---
+
+## 11. Migration from Dev Mode to Production
+
+When ready to enable authentication and security, follow these steps:
+
+### 11.1. Enable Supabase Auth
+
+1. **Start Supabase** (if using local development):
+   ```bash
+   supabase start
+   ```
+   This automatically creates the `auth.users` table and auth schema.
+
+2. **Create a test user**:
+   ```bash
+   # Using Supabase Studio: http://localhost:54323
+   # Navigate to Authentication > Users > Add User
+   # Or use the API:
+   curl -X POST 'http://localhost:54321/auth/v1/signup' \
+     -H "apikey: YOUR_ANON_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"test@example.com","password":"testpass123"}'
+   ```
+
+### 11.2. Update Database - Enable RLS
+
+```sql
+-- Enable Row Level Security on all tables
+ALTER TABLE flashcards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE generations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE generation_error_logs ENABLE ROW LEVEL SECURITY;
+```
+
+The RLS policies should already be defined in your migrations (see database schema plan).
+
+### 11.3. Update API Implementation
+
+1. **Update Supabase client to handle auth**:
+   ```typescript
+   // src/db/supabase.client.ts
+   import { createClient } from "@supabase/supabase-js";
+   import type { Database } from "./database.types";
+
+   export const createSupabaseClient = (accessToken?: string) => {
+     const supabaseUrl = import.meta.env.SUPABASE_URL;
+     const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
+     
+     return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+       global: {
+         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
+       }
+     });
+   };
+   ```
+
+2. **Update middleware to extract user from JWT**:
+   ```typescript
+   // src/middleware/index.ts
+   import { defineMiddleware } from "astro:middleware";
+   import { createSupabaseClient } from "../db/supabase.client";
+
+   export const onRequest = defineMiddleware(async (context, next) => {
+     const authHeader = context.request.headers.get('Authorization');
+     const token = authHeader?.replace('Bearer ', '');
+     
+     const supabase = createSupabaseClient(token);
+     const { data: { user }, error } = await supabase.auth.getUser();
+     
+     context.locals.supabase = supabase;
+     context.locals.user = user;
+     
+     return next();
+   });
+   ```
+
+3. **Add auth checks to API endpoints**:
+   ```typescript
+   // Example: src/pages/api/flashcards/index.ts
+   import type { APIRoute } from 'astro';
+
+   export const GET: APIRoute = async ({ locals }) => {
+     // Check authentication
+     if (!locals.user) {
+       return new Response(
+         JSON.stringify({
+           error: {
+             code: 'UNAUTHORIZED',
+             message: 'Authentication required'
+           }
+         }),
+         { status: 401, headers: { 'Content-Type': 'application/json' } }
+       );
+     }
+
+     // Use locals.user.id instead of hardcoded DEV_USER_ID
+     const { data, error } = await locals.supabase
+       .from('flashcards')
+       .select('*')
+       .order('created_at', { ascending: false });
+
+     // RLS automatically filters by user_id
+     return new Response(JSON.stringify({ data }), {
+       status: 200,
+       headers: { 'Content-Type': 'application/json' }
+     });
+   };
+   ```
+
+4. **Remove hardcoded user IDs**:
+   - Replace `DEV_USER_ID` constant with `locals.user.id`
+   - Let RLS policies handle user_id filtering automatically
+   - Remove manual user_id filters from queries (RLS handles this)
+
+### 11.4. Update API Responses
+
+- Add 401 Unauthorized responses where authentication fails
+- Update error messages to mention authentication requirements
+- Update documentation to show required Authorization headers
+
+### 11.5. Frontend Changes
+
+Update your frontend to:
+1. Handle user sign up/sign in
+2. Store JWT token (Supabase handles this automatically)
+3. Include `Authorization: Bearer <token>` header in all API requests
+4. Handle 401 errors and redirect to login
+
+### 11.6. Testing with Authentication
+
+```bash
+# 1. Get JWT token
+curl -X POST 'http://localhost:54321/auth/v1/token?grant_type=password' \
+  -H "apikey: YOUR_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"testpass123"}'
+
+# Extract access_token from response
+
+# 2. Use token in API requests
+curl -X GET 'http://localhost:4321/api/flashcards' \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
 
 ---
 
