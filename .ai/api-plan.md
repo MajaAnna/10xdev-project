@@ -16,7 +16,7 @@ This document defines the complete REST API specification for the AI Cards appli
 |----------|---------------|-------------|
 | Flashcards | `flashcards` | User's flashcards (manual and AI-generated) |
 | Generations | `generations` | AI generation sessions and analytics |
-| Study | N/A | Learning mode operations |
+| Generation Error Logs | `generation_error_logs` | Used for logging errors happening during flashards generation by AI |
 | Auth | `auth.users` | User authentication (Supabase managed) |
 
 ---
@@ -109,8 +109,7 @@ Content-Type: application/json
   "front": "What is photosynthesis?",
   "back": "The process by which plants convert light energy into chemical energy",
   "source": "manual",
-  "generation_id": null,
-  "was_edited": false
+  "generation_id": null
 }
 ```
 
@@ -118,15 +117,17 @@ Content-Type: application/json
 - `front` (required, string, 1-200 chars): Question/term side
 - `back` (required, string, 1-500 chars): Answer/definition side
 - `source` (required, enum): One of `manual`, `ai_generated`, `ai_generated_edited`
-- `generation_id` (optional, integer): ID of generation session (required if source is AI-generated)
-- `was_edited` (optional, boolean, default: false): Whether AI-generated candidate was edited
+- `generation_id` (conditionally required, integer or null):
+  - REQUIRED for `ai_generated` and `ai_generated_edited` sources
+  - MUST be null for `manual` source
 
 **Business Logic**:
-1. If `source` is `ai_generated` or `ai_generated_edited` and `generation_id` is provided:
-   - Increment `accepted_unedited_count` (if `was_edited` = false)
-   - Increment `accepted_edited_count` (if `was_edited` = true)
-   - Update generation record
-2. Set `source` to `ai_generated_edited` if `was_edited` = true (overrides request source)
+1. Validate generation_id based on source:
+   - If `source` = `manual`: generation_id MUST be null
+   - If `source` = `ai_generated` or `ai_generated_edited`: generation_id MUST be provided and valid
+2. If source is AI-generated, update generation record:
+   - Increment `accepted_unedited_count` (if `source` = `ai_generated`)
+   - Increment `accepted_edited_count` (if `source` = `ai_generated_edited`)
 
 **Response Body** (201 Created):
 ```json
@@ -158,14 +159,18 @@ Content-Type: application/json
         "message": "Front must be between 1 and 200 characters"
       },
       {
-        "field": "back",
-        "message": "Back cannot be empty or whitespace only"
+        "field": "generation_id",
+        "message": "generation_id is required for AI-generated flashcards"
+      },
+      {
+        "field": "generation_id",
+        "message": "generation_id must be null for manual flashcards"
       }
     ]
   }
 }
 ```
-- `404 Not Found`: Generation ID not found
+- `404 Not Found`: Generation ID not found or doesn't belong to user
 ```json
 {
   "error": {
@@ -199,12 +204,12 @@ Content-Type: application/json
     {
       "front": "What is HTML?",
       "back": "HyperText Markup Language",
-      "was_edited": false
+      "source": "ai_generated"
     },
     {
       "front": "What is CSS?",
       "back": "Cascading Style Sheets - used for styling web pages",
-      "was_edited": true
+      "source": "ai_generated_edited"
     }
   ]
 }
@@ -215,15 +220,15 @@ Content-Type: application/json
 - `flashcards` (required, array): Array of flashcard objects
   - `front` (required, string, 1-200 chars)
   - `back` (required, string, 1-500 chars)
-  - `was_edited` (optional, boolean, default: false)
+  - `source` (required, enum): One of `ai_generated`, `ai_generated_edited`
 
 **Business Logic**:
 1. Validate all flashcards before creating any
 2. Create all flashcards in a transaction
 3. Update generation record with total counts:
-   - `accepted_unedited_count` += count where `was_edited` = false
-   - `accepted_edited_count` += count where `was_edited` = true
-4. Set `source` based on `was_edited` flag for each flashcard
+   - `accepted_unedited_count` += count where `source` = `ai_generated`
+   - `accepted_edited_count` += count where `source` = `ai_generated_edited`
+4. Insert flashcards with their respective `source` values
 
 **Response Body** (201 Created):
 ```json
@@ -329,7 +334,7 @@ Authorization: Bearer <jwt_token>
 
 **Endpoint**: `PATCH /api/flashcards/:id`
 
-**Description**: Updates an existing flashcard's content.
+**Description**: Updates an existing flashcard's content. Automatically updates the source field based on the flashcard's origin.
 
 **Authentication**: Required
 
@@ -351,9 +356,18 @@ Content-Type: application/json
 ```
 
 **Request Body Schema**:
-- `front` (optional, string, 1-200 chars): Updated question/term
-- `back` (optional, string, 1-500 chars): Updated answer/definition
+- `front` (optional, string, 1-200 chars, not empty/whitespace): Updated question/term
+- `back` (optional, string, 1-500 chars, not empty/whitespace): Updated answer/definition
 - At least one field must be provided
+
+**Business Logic**:
+1. Validate that at least one field (front or back) is provided
+2. Validate length constraints (min 1 char after trim, max 200 for front, max 500 for back)
+3. Automatically update the `source` field based on current source:
+   - If current source = `ai_generated` → update to `ai_generated_edited`
+   - If current source = `ai_generated_edited` → keep as `ai_generated_edited`
+   - If current source = `manual` → keep as `manual`
+4. Update `updated_at` timestamp automatically (database trigger)
 
 **Response Body** (200 OK):
 ```json
@@ -364,7 +378,7 @@ Content-Type: application/json
     "generation_id": 45,
     "front": "What is the capital city of France?",
     "back": "Paris, located in the north-central part of the country",
-    "source": "ai_generated",
+    "source": "ai_generated_edited",
     "created_at": "2025-11-26T10:30:00Z",
     "updated_at": "2025-11-26T11:45:00Z"
   }
@@ -654,18 +668,23 @@ Authorization: Bearer <jwt_token>
 
 ---
 
-### 2.3. Study Resource
+### 2.3. Generation Error Logs Resource (Internal/Admin)
 
-#### 2.3.1. Get Study Queue
+#### 2.3.1. List Generation Error Logs
 
-**Endpoint**: `GET /api/study/queue`
+**Endpoint**: `GET /api/generation-error-logs`
 
-**Description**: Retrieves flashcards for study session. For MVP, returns flashcards in chronological order. Post-MVP, this will integrate with spaced repetition algorithm.
+**Description**: Retrieves paginated list of generation error logs for troubleshooting and analytics. This endpoint is intended for admin users or internal monitoring. It helps track AI generation failures and identify patterns.
 
-**Authentication**: Required
+**Authentication**: Required (Admin access recommended for production)
 
 **Query Parameters**:
-- `limit` (optional, integer, default: 10, max: 50): Number of flashcards to study
+- `page` (optional, integer, default: 1): Page number
+- `limit` (optional, integer, default: 20, max: 100): Items per page
+- `user_id` (optional, uuid): Filter by specific user (admin only)
+- `model` (optional, string): Filter by AI model
+- `from_date` (optional, ISO 8601 date): Filter errors from this date
+- `to_date` (optional, ISO 8601 date): Filter errors until this date
 
 **Request Headers**:
 ```
@@ -675,85 +694,58 @@ Authorization: Bearer <jwt_token>
 **Response Body** (200 OK):
 ```json
 {
-  "data": {
-    "queue": [
-      {
-        "id": 123,
-        "front": "What is the capital of France?",
-        "back": "Paris",
-        "source": "ai_generated"
-      },
-      {
-        "id": 124,
-        "front": "What is photosynthesis?",
-        "back": "The process by which plants convert light energy into chemical energy",
-        "source": "manual"
-      }
-    ],
-    "total_cards": 97,
-    "session_id": "session-uuid"
+  "data": [
+    {
+      "id": 123,
+      "user_id": "uuid-string",
+      "model": "gpt-4",
+      "source_text_hash": "a3f5d8e9c2b1...",
+      "source_text_length": 245,
+      "error_code": "RATE_LIMIT_EXCEEDED",
+      "error_message": "OpenRouter API rate limit exceeded",
+      "created_at": "2025-11-26T10:30:00Z"
+    },
+    {
+      "id": 122,
+      "user_id": "uuid-string-2",
+      "model": "gpt-4",
+      "source_text_hash": "b2e4c7a8d1f3...",
+      "source_text_length": 1850,
+      "error_code": "API_ERROR",
+      "error_message": "OpenRouter API returned 500 error",
+      "created_at": "2025-11-26T09:15:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total_pages": 3,
+    "total_items": 58
   }
 }
 ```
 
+**Use Cases**:
+- Monitor AI generation failure rates
+- Identify problematic source texts (via hash)
+- Track API errors by model
+- Analyze error patterns over time
+- Debug user-reported generation issues
+
 **Error Responses**:
 - `401 Unauthorized`: Missing or invalid JWT token
-- `404 Not Found`: No flashcards available for study
+- `403 Forbidden`: User lacks admin permissions (if admin-only in production)
+- `400 Bad Request`: Invalid query parameters
 ```json
 {
   "error": {
-    "code": "NO_CARDS_AVAILABLE",
-    "message": "No flashcards available for study. Create some flashcards first."
+    "code": "INVALID_PARAMETERS",
+    "message": "Invalid date format for from_date parameter"
   }
 }
 ```
 
----
-
-#### 2.3.2. Submit Rating
-
-**Endpoint**: `POST /api/study/rate`
-
-**Description**: Records user's self-assessment rating for a flashcard. For MVP, this is stored for future use but doesn't affect study algorithm yet.
-
-**Authentication**: Required
-
-**Request Headers**:
-```
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-```
-
-**Request Body**:
-```json
-{
-  "flashcard_id": 123,
-  "rating": "know",
-  "session_id": "session-uuid"
-}
-```
-
-**Request Body Schema**:
-- `flashcard_id` (required, integer): ID of flashcard being rated
-- `rating` (required, enum): Either `"know"` or `"dont_know"`
-- `session_id` (optional, string): Session identifier for grouping ratings
-
-**Response Body** (200 OK):
-```json
-{
-  "data": {
-    "message": "Rating recorded successfully",
-    "next_card_id": 124
-  }
-}
-```
-
-**Note**: For MVP, ratings are logged but not stored in database. Post-MVP, these will be stored in a `learning_sessions` table for spaced repetition algorithm.
-
-**Error Responses**:
-- `401 Unauthorized`: Missing or invalid JWT token
-- `400 Bad Request`: Invalid rating value
-- `404 Not Found`: Flashcard not found
+**Note**: For MVP, this endpoint returns only the current user's error logs. In production with admin roles, it can be extended to allow filtering by any user_id.
 
 ---
 
@@ -785,7 +777,6 @@ Authorization: Bearer <jwt_token>
     "ai_adoption_rate": 0.794,
     "total_generations": 15,
     "average_acceptance_rate": 0.82,
-    "total_study_sessions": 8,
     "created_at": "2025-10-15T08:00:00Z"
   }
 }
@@ -799,15 +790,12 @@ Authorization: Bearer <jwt_token>
 - `401 Unauthorized`: Missing or invalid JWT token
 
 ---
-
 ## 3. Authentication and Authorization
 
 ### 3.1. Authentication Mechanism
 
 **Provider**: Supabase Auth  
-**Method**: JWT Bearer Token
-
-All endpoints (except authentication endpoints) require a valid JWT token in the `Authorization` header:
+**Method**: JWT Bearer TokenAll endpoints (except authentication endpoints) require a valid JWT token in the `Authorization` header:
 
 ```
 Authorization: Bearer <jwt_token>
@@ -885,7 +873,6 @@ X-Frame-Options: DENY
 X-XSS-Protection: 1; mode=block
 Strict-Transport-Security: max-age=31536000; includeSubDomains
 ```
-
 ---
 
 ## 4. Validation and Business Logic
@@ -898,7 +885,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 | front | Required, 1-200 chars, not empty/whitespace | "Front must be between 1 and 200 characters and cannot be empty or whitespace only" |
 | back | Required, 1-500 chars, not empty/whitespace | "Back must be between 1 and 500 characters and cannot be empty or whitespace only" |
 | source | Required, enum (manual, ai_generated, ai_generated_edited) | "Source must be one of: manual, ai_generated, ai_generated_edited" |
-| generation_id | Required if source is AI-generated, must exist | "Valid generation_id required for AI-generated flashcards" |
+| generation_id | REQUIRED for ai_generated/ai_generated_edited, MUST be null for manual, must exist in database | "generation_id is required for AI-generated flashcards" / "generation_id must be null for manual flashcards" / "Invalid generation_id" |
 
 #### Generations
 | Field | Rules | Error Message |
@@ -906,19 +893,12 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 | source_text | Required, 100-10,000 chars | "Source text must be between 100 and 10,000 characters" |
 | model | Optional, max 50 chars | "Model name must not exceed 50 characters" |
 
-#### Study Ratings
-| Field | Rules | Error Message |
-|-------|-------|---------------|
-| flashcard_id | Required, must exist and belong to user | "Invalid flashcard ID" |
-| rating | Required, enum (know, dont_know) | "Rating must be either 'know' or 'dont_know'" |
-
 ### 4.2. Business Logic Implementation
 
 #### BL-1: AI Generation Flow
 ```
 1. Validate source text length (100-10,000 characters)
 2. Calculate SHA-256 hash: sha256(source_text)
-3. Optional: Check for duplicate generation in last 5 minutes
 4. Call OpenRouter API with prompt template
 5. Parse AI response into candidates array
 6. Validate each candidate (front: 1-200, back: 1-500)
@@ -933,28 +913,33 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 #### BL-2: Accept Single Flashcard
 ```
 1. Validate front/back according to rules
-2. Determine source:
-   - If was_edited = true: source = 'ai_generated_edited'
-   - Else: use provided source value
-3. Insert flashcard with user_id from JWT
-4. If generation_id provided:
-   - If was_edited: INCREMENT generations.accepted_edited_count
-   - Else: INCREMENT generations.accepted_unedited_count
-5. Return created flashcard
+2. Validate source is one of: manual, ai_generated, ai_generated_edited
+3. Validate generation_id based on source:
+   - If source = 'manual': generation_id MUST be null (error if not)
+   - If source = 'ai_generated' or 'ai_generated_edited': 
+     - generation_id MUST be provided (error if null)
+     - generation_id MUST exist in database (error if not found)
+4. Insert flashcard with user_id from JWT and provided source value
+5. If source is AI-generated, update generation record:
+   - If source = 'ai_generated': INCREMENT generations.accepted_unedited_count
+   - If source = 'ai_generated_edited': INCREMENT generations.accepted_edited_count
+6. Return created flashcard
 ```
 
 #### BL-3: Bulk Accept Flashcards
 ```
-1. Validate all flashcards before creating any
-2. Start database transaction
-3. For each flashcard:
-   - Determine source based on was_edited flag
-   - Insert flashcard
-4. Update generation record:
-   - accepted_unedited_count += count(where was_edited = false)
-   - accepted_edited_count += count(where was_edited = true)
-5. Commit transaction
-6. Return all created flashcards
+1. Validate generation_id exists in database
+2. Validate all flashcards before creating any:
+   - Each flashcard must have source = 'ai_generated' or 'ai_generated_edited'
+   - Validate front/back for each flashcard
+3. Start database transaction
+4. For each flashcard:
+   - Insert flashcard with provided source value and generation_id
+5. Update generation record:
+   - accepted_unedited_count += count(where source = 'ai_generated')
+   - accepted_edited_count += count(where source = 'ai_generated_edited')
+6. Commit transaction
+7. Return all created flashcards
 ```
 
 #### BL-4: Error Logging
@@ -972,18 +957,20 @@ When POST /api/generations fails:
 4. Return user-friendly error message (not technical details)
 ```
 
-#### BL-5: Duplicate Generation Prevention (Optional Optimization)
+#### BL-5: Update Flashcard
 ```
-Before generating:
-1. Calculate source_text_hash
-2. Query generations table:
-   WHERE user_id = current_user
-     AND source_text_hash = calculated_hash
-     AND created_at > NOW() - INTERVAL '5 minutes'
-3. If found:
-   - Option A: Return error "Duplicate generation detected"
-   - Option B: Return cached candidates from previous generation
-4. Else: Proceed with generation
+1. Verify flashcard exists and belongs to current user (via RLS)
+2. Validate at least one field (front or back) is provided
+3. Validate provided fields:
+   - front: 1-200 chars, not empty/whitespace only
+   - back: 1-500 chars, not empty/whitespace only
+4. Determine new source value based on current source:
+   - If current source = 'ai_generated': new source = 'ai_generated_edited'
+   - If current source = 'ai_generated_edited': keep 'ai_generated_edited'
+   - If current source = 'manual': keep 'manual'
+5. Update flashcard with new values and source
+6. updated_at timestamp updated automatically by database trigger
+7. Return updated flashcard
 ```
 
 ### 4.3. Rate Limiting
@@ -1103,9 +1090,6 @@ For testing without AI API costs:
 2. **Manual Flashcard Management**:
    - Create → List → Update → Delete → Verify
 
-3. **Study Session**:
-   - Get queue → Rate flashcards → Complete session
-
 4. **Error Handling**:
    - Invalid input → Rate limit → Generation failure → Auth failure
 
@@ -1142,41 +1126,6 @@ Target: ai_adoption_rate >= 0.75
 ```
 
 **Data Source**: `flashcards.source` field
-
----
-
-## 9. Future Enhancements (Post-MVP)
-
-These features are out of scope for MVP but the API is designed to accommodate them:
-
-1. **Spaced Repetition Algorithm**:
-   - New table: `learning_sessions`
-   - Enhanced `POST /api/study/rate` to update learning progress
-   - `GET /api/study/queue` uses SRS algorithm
-
-2. **Decks/Collections**:
-   - New resource: `/api/decks`
-   - `flashcards.deck_id` foreign key
-   - Nested routes: `/api/decks/:id/flashcards`
-
-3. **Collaborative Features**:
-   - `/api/decks/:id/share` - Share deck with other users
-   - `/api/decks/public` - Browse public decks
-
-4. **Import/Export**:
-   - `POST /api/import/csv` - Import from CSV
-   - `GET /api/export/anki` - Export to Anki format
-
-5. **Tags and Organization**:
-   - New resource: `/api/tags`
-   - Many-to-many relationship with flashcards
-
-6. **Media Support**:
-   - New resource: `/api/media`
-   - `flashcards.media_id` foreign key
-   - Image/audio attachments for flashcards
-
----
 
 ## 10. Deployment and Environment Configuration
 
