@@ -62,13 +62,15 @@ export interface CreateFlashcardCommand {
  * Used in PATCH /api/flashcards/:id
  *
  * At least one field (front or back) must be provided
- * The source field is automatically updated by the API based on business logic
+ *
+ * Note: source and generation_id are NOT included because:
+ * - source is automatically updated by the API based on current value
+ *   (ai_generated → ai_generated_edited, others stay the same)
+ * - generation_id never changes after flashcard creation
  */
-export interface UpdateFlashcardCommandDto {
+export interface UpdateFlashcardCommand {
   front?: string;
   back?: string;
-  source: FlashcardSource;
-  generation_id: number | null;
 }
 
 /**
@@ -137,10 +139,9 @@ export type GenerationDto = Omit<GenerationEntity, "user_id"> & {
  * Command Model: Generate flashcards from source text using AI
  * Used in POST /api/generations
  */
-export interface CreateGenerationDTO {
-  generation_id: number;
-  flashcardsCandidates: FlashcardCandidateDto[]; // Fixed type name to match DTO naming pattern
-  generated_count: number;
+export interface GenerateFlashcardsCommand {
+  source_text: string;
+  model?: string;
 }
 
 /**
