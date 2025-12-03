@@ -174,7 +174,7 @@ export interface GenerationResponseDto {
  *
  * Includes all accepted flashcards that were created from this generation
  */
-export type GenerationWithFlashcardsDto = Omit<GenerationEntity, "source_text_hash" | "user_id"> & {
+export type GenerationWithFlashcardsDto = Omit<GenerationEntity, "user_id"> & {
   flashcards: Pick<FlashcardDto, "id" | "front" | "back" | "source" | "created_at">[];
 };
 

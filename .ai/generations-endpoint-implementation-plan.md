@@ -304,7 +304,7 @@ INSERT INTO generation_error_logs (
 **Development Mode**:
 - Authentication is optional for easier testing
 - Endpoint works without `Authorization` header
-- `user_id` will be `null` in database records
+- `user_id` will use a hardcoded test UUID: `00000000-0000-0000-0000-000000000001`
 - **Warning**: This should NEVER be used in production
 
 **Production Mode** (Initial Implementation):
@@ -319,8 +319,12 @@ INSERT INTO generation_error_logs (
 
 **Implementation in Endpoint**:
 ```typescript
+// Development mode: Use hardcoded test user ID
+const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
+
 // Check if running in production mode
 const isProduction = import.meta.env.PROD;
+let userId: string;
 
 if (isProduction) {
   // Extract token from Authorization header
@@ -357,6 +361,9 @@ if (isProduction) {
 
   // Use user.id for subsequent operations
   userId = user.id;
+} else {
+  // Development mode: Use hardcoded test user ID
+  userId = DEV_USER_ID;
 }
 ```
 
@@ -594,7 +601,7 @@ const generateFlashcardsSchema = z.object({
 #### Error Log Record Structure
 ```typescript
 {
-  user_id: string | null,       // null in dev mode
+  user_id: string,               // DEV_USER_ID in dev mode, real user ID in production
   model: string,                 // Model that was attempted
   source_text_hash: string,      // SHA-256 hash
   source_text_length: number,
@@ -989,7 +996,7 @@ function parseAIResponse(response: OpenRouterResponse): FlashcardCandidateDto[] 
 async function createGenerationRecord(
   supabase: SupabaseClient,
   data: {
-    user_id: string | null;
+    user_id: string;
     model: string;
     generation_duration: number;
     generated_count: number;
@@ -1029,7 +1036,7 @@ async function createGenerationRecord(
 async function logGenerationError(
   supabase: SupabaseClient,
   data: {
-    user_id: string | null;
+    user_id: string;
     model: string;
     source_text_hash: string;
     source_text_length: number;
@@ -1067,7 +1074,7 @@ export async function generateFlashcards(
   params: {
     source_text: string;
     model: string;
-    user_id: string | null;
+    user_id: string;
   }
 ): Promise<GenerateFlashcardsResult> {
   const startTime = Date.now();
@@ -1157,9 +1164,12 @@ import { ZodError } from "zod";
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
+    // Development mode: Use hardcoded test user ID
+    const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
+    
     // 1. Authentication (Production mode only)
     const isProduction = import.meta.env.PROD;
-    let userId: string | null = null;
+    let userId: string;
 
     if (isProduction) {
       // Extract token from Authorization header
@@ -1198,6 +1208,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
 
       userId = user.id;
+    } else {
+      // Development mode: Use hardcoded test user ID
+      userId = DEV_USER_ID;
     }
 
     // 2. Parse request body
