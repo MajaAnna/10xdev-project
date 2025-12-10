@@ -6,7 +6,7 @@ The `POST /api/generations` endpoint generates flashcard candidates from source 
 
 **Key Features**:
 - Validates source text length (100-10,000 characters)
-- Calculates SHA-256 hash of source text for deduplication and privacy
+- Calculates MD5 hash of source text for deduplication and privacy
 - Communicates with OpenRouter API asynchronously
 - Creates a record in the `generations` table with session metrics
 - Logs errors to the `generation_error_logs` table in case of failure
@@ -201,7 +201,7 @@ Authorization: Bearer <jwt_token>  (Production only)
    - Validate model (optional, default "gpt-4")
    ↓
 4. Call Generation Service (generation.service.ts)
-   - Calculate SHA-256 hash of source text
+   - Calculate MD5 hash of source text
    - Prepare AI prompt
    - Send async request to OpenRouter API with source_text
    - Wait for response (with 60s timeout)
@@ -304,7 +304,7 @@ INSERT INTO generation_error_logs (
 **Development Mode**:
 - Authentication is optional for easier testing
 - Endpoint works without `Authorization` header
-- `user_id` will use a hardcoded test UUID: `00000000-0000-0000-0000-000000000001`
+- `user_id` will use `DEFAULT_USER_ID` from `src/db/supabase.client.ts`: `00000000-0000-0000-0000-000000000001`
 - **Warning**: This should NEVER be used in production
 
 **Production Mode** (Initial Implementation):
@@ -319,8 +319,8 @@ INSERT INTO generation_error_logs (
 
 **Implementation in Endpoint**:
 ```typescript
-// Development mode: Use hardcoded test user ID
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
+// Import default user ID from supabase client
+import { DEFAULT_USER_ID } from "../../db/supabase.client";
 
 // Check if running in production mode
 const isProduction = import.meta.env.PROD;
@@ -362,8 +362,8 @@ if (isProduction) {
   // Use user.id for subsequent operations
   userId = user.id;
 } else {
-  // Development mode: Use hardcoded test user ID
-  userId = DEV_USER_ID;
+  // Development mode: Use DEFAULT_USER_ID constant
+  userId = DEFAULT_USER_ID;
 }
 ```
 
@@ -399,9 +399,9 @@ const generateFlashcardsSchema = z.object({
 ### Data Privacy
 
 #### Source Text Hashing
-- **Algorithm**: SHA-256
+- **Algorithm**: MD5
 - **Purpose**: Deduplication and analytics without storing full text
-- **Implementation**: Native Node.js `crypto.createHash('sha256')`
+- **Implementation**: Native Node.js `crypto.createHash('md5')`
 
 #### We Don't Store Full Source Text
 - Only hash and length in `generations` table
@@ -601,9 +601,9 @@ const generateFlashcardsSchema = z.object({
 #### Error Log Record Structure
 ```typescript
 {
-  user_id: string,               // DEV_USER_ID in dev mode, real user ID in production
+  user_id: string,               // DEFAULT_USER_ID in dev mode, real user ID in production
   model: string,                 // Model that was attempted
-  source_text_hash: string,      // SHA-256 hash
+  source_text_hash: string,      // MD5 hash
   source_text_length: number,
   error_code: string,            // e.g., "OPENROUTER_RATE_LIMIT", "OPENROUTER_TIMEOUT"
   error_message: string          // Full error message
@@ -660,7 +660,7 @@ try {
 - **Problem**: Large JSON responses to parse
 - **Impact**: Minimal (parsing is fast)
 
-#### 3. SHA-256 Hash Calculation
+#### 3. MD5 Hash Calculation
 - **Problem**: Hashing long texts (up to 10,000 characters)
 - **Impact**: Minimal (hashing is fast in Node.js)
 
@@ -785,10 +785,10 @@ export class GenerationFailedError extends Error {
 import crypto from "crypto";
 
 /**
- * Calculates SHA-256 hash for the given text
+ * Calculates MD5 hash for the given text
  */
-export function calculateSHA256Hash(text: string): string {
-  return crypto.createHash("sha256").update(text, "utf8").digest("hex");
+export function calculateMD5Hash(text: string): string {
+  return crypto.createHash("md5").update(text, "utf8").digest("hex");
 }
 ```
 
@@ -810,7 +810,7 @@ import {
   RateLimitError,
   GenerationFailedError,
 } from "../errors/generation.errors";
-import { calculateSHA256Hash } from "../utils/hash.utils";
+import { calculateMD5Hash } from "../utils/hash.utils";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_TIMEOUT = 60000; // 60 seconds
@@ -1078,7 +1078,7 @@ export async function generateFlashcards(
   }
 ): Promise<GenerateFlashcardsResult> {
   const startTime = Date.now();
-  const sourceTextHash = calculateSHA256Hash(params.source_text);
+  const sourceTextHash = calculateMD5Hash(params.source_text);
   const sourceTextLength = params.source_text.length;
 
   try {
@@ -1164,54 +1164,13 @@ import { ZodError } from "zod";
 
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // Development mode: Use hardcoded test user ID
-    const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
-    
-    // 1. Authentication (Production mode only)
-    const isProduction = import.meta.env.PROD;
-    let userId: string;
+    // Use default user ID (auth will be implemented later)
+    const userId = DEFAULT_USER_ID;
 
-    if (isProduction) {
-      // Extract token from Authorization header
-      const authHeader = request.headers.get("Authorization");
-
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return new Response(
-          JSON.stringify({
-            error: {
-              code: "UNAUTHORIZED",
-              message: "Authentication required. Please provide a valid access token.",
-            },
-          } satisfies ErrorResponseDto),
-          { status: 401, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      const token = authHeader.substring(7); // Remove "Bearer " prefix
-
-      // Verify token with Supabase
-      const {
-        data: { user },
-        error: authError,
-      } = await locals.supabase.auth.getUser(token);
-
-      if (authError || !user) {
-        return new Response(
-          JSON.stringify({
-            error: {
-              code: "UNAUTHORIZED",
-              message: "Invalid or expired access token.",
-            },
-          } satisfies ErrorResponseDto),
-          { status: 401, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      userId = user.id;
-    } else {
-      // Development mode: Use hardcoded test user ID
-      userId = DEV_USER_ID;
-    }
+    // 1. Authentication (Production mode only - currently skipped)
+    // TODO: Implement authentication when ready
+    // const isProduction = import.meta.env.PROD;
+    // if (isProduction) { ... verify JWT token ... }
 
     // 2. Parse request body
     let body: unknown;
@@ -1378,7 +1337,7 @@ Add information about the new endpoint to project documentation
 - [ ] Zod validation works correctly
 - [ ] All error scenarios are handled
 - [ ] Errors are logged to `generation_error_logs`
-- [ ] SHA-256 hash is calculated correctly
+- [ ] MD5 hash is calculated correctly
 - [ ] OpenRouter API is called with 60s timeout
 - [ ] Responses have correct status codes
 - [ ] Response structure matches DTO types

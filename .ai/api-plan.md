@@ -20,9 +20,10 @@ For MVP development phase:
 
 ### Implementation Notes for Dev Mode
 
-1. **Hardcoded User ID**: Use a constant UUID in your API implementation:
+1. **Hardcoded User ID**: Use `DEFAULT_USER_ID` constant from `src/db/supabase.client.ts`:
    ```typescript
-   const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
+   import { DEFAULT_USER_ID } from "../../db/supabase.client";
+   const userId = DEFAULT_USER_ID; // '00000000-0000-0000-0000-000000000001'
    ```
 
 2. **Skip Auth Checks**: All endpoints accept requests without checking for authentication
@@ -487,10 +488,10 @@ Content-Type: application/json
 
 **Business Logic**:
 1. Validate source text length (100-10,000 characters)
-2. Calculate SHA-256 hash of source text
-4. Call OpenRouter API with source text
-5. Parse AI response into flashcard candidates
-6. Create generation log record with:
+2. Calculate MD5 hash of source text
+3. Call OpenRouter API with source text
+4. Parse AI response into flashcard candidates
+5. Create generation log record with:
    - `generated_count` = number of candidates returned
    - `generation_duration` = time taken in milliseconds
    - `source_text_hash` and `source_text_length`
@@ -920,9 +921,9 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 #### BL-1: AI Generation Flow
 ```
 1. Validate source text length (100-10,000 characters)
-2. Calculate SHA-256 hash: sha256(source_text)
-4. Call OpenRouter API with prompt template
-5. Parse AI response into candidates array
+2. Calculate MD5 hash: md5(source_text)
+3. Call OpenRouter API with prompt template
+4. Parse AI response into candidates array
 6. Validate each candidate (front: 1-200, back: 1-500)
 7. Create generation record:
    - generated_count = candidates.length
@@ -942,7 +943,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
      - generation_id MUST be provided (error if null)
      - generation_id MUST exist in database (error if not found)
 4. Get user_id:
-   - Dev mode: Use hardcoded DEV_USER_ID constant
+   - Dev mode: Use DEFAULT_USER_ID from src/db/supabase.client.ts
    - Production: Use user_id from JWT (locals.user.id)
 5. Insert flashcard with user_id and provided source value
 6. If source is AI-generated, update generation record:
@@ -972,7 +973,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 When POST /api/generations fails:
 1. Catch error from OpenRouter API
 2. Extract error_code and error_message
-3. Get user_id (DEV_USER_ID in dev mode, or from JWT in production)
+3. Get user_id (DEFAULT_USER_ID in dev mode, or from JWT in production)
 4. Create generation_error_logs record:
    - user_id
    - model used
@@ -986,7 +987,7 @@ When POST /api/generations fails:
 #### BL-5: Update Flashcard
 ```
 1. Verify flashcard exists:
-   - Dev mode: Check flashcard belongs to DEV_USER_ID
+   - Dev mode: Check flashcard belongs to DEFAULT_USER_ID
    - Production: RLS automatically filters by current user
 2. Validate at least one field (front or back) is provided
 3. Validate provided fields:
@@ -1261,7 +1262,7 @@ The RLS policies should already be defined in your migrations (see database sche
    ```
 
 4. **Remove hardcoded user IDs**:
-   - Replace `DEV_USER_ID` constant with `locals.user.id`
+   - Replace `DEFAULT_USER_ID` constant with `locals.user.id`
    - Let RLS policies handle user_id filtering automatically
    - Remove manual user_id filters from queries (RLS handles this)
 
