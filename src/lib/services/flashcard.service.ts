@@ -80,10 +80,10 @@ async function updateGenerationCounts(
   // Determine which field to increment based on source
   const field = source === "ai_generated" ? "accepted_unedited_count" : "accepted_edited_count";
 
-  // First, fetch the current generation record
+  // Fetch both count fields to avoid TypeScript indexing issues
   const { data: generation, error: fetchError } = await supabase
     .from("generations")
-    .select(field)
+    .select("accepted_unedited_count, accepted_edited_count")
     .eq("id", generation_id)
     .single();
 
@@ -92,7 +92,8 @@ async function updateGenerationCounts(
   }
 
   // Increment the appropriate counter
-  const newCount = (generation[field] as number) + 1;
+  const currentCount = generation[field] ?? 0;
+  const newCount = currentCount + 1;
 
   const { error: updateError } = await supabase
     .from("generations")
