@@ -4,19 +4,18 @@
 
 **Endpoint**: `GET /api/flashcards`
 
-**Purpose**: Retrieve a paginated list of flashcards belonging to the authenticated user, sorted by creation date (newest first). Supports optional filtering by flashcard source type.
+**Purpose**: Retrieve a list of flashcards belonging to the authenticated user, sorted by creation date (newest first).
 
 **Key Features**:
-- Pagination with configurable page size
-- Filtering by source type (manual, ai_generated, ai_generated_edited)
-- Sorted by creation date in descending order
-- Returns metadata for pagination navigation
+- Returns up to 20 flashcards at a time (configurable via `limit` parameter)
+- Sorted by creation date in descending order (newest first)
+- Simple pagination support for future expansion
 
 **Business Rules**:
 - Users can only view their own flashcards (enforced by user_id filtering)
-- Default pagination: page 1, 20 items per page
-- Maximum page size: 100 items
-- Empty results are valid (returns empty array with pagination metadata)
+- Default: returns first 20 flashcards
+- Maximum: can request up to 100 flashcards at once
+- Empty results are valid: If user has no flashcards, returns empty array with status 200 OK
 
 ---
 
@@ -27,44 +26,53 @@
 
 ### URL Structure
 ```
-/api/flashcards?page={page}&limit={limit}&source={source}
+/api/flashcards?page={page}&limit={limit}
 ```
 
 ### Query Parameters
 
 | Parameter | Type | Required | Default | Constraints | Description |
 |-----------|------|----------|---------|-------------|-------------|
-| `page` | integer | No | 1 | >= 1 | Page number for pagination |
-| `limit` | integer | No | 20 | >= 1, <= 100 | Number of items per page |
-| `source` | enum | No | - | One of: `manual`, `ai_generated`, `ai_generated_edited` | Filter flashcards by source type |
+| `page` | integer | No | 1 | >= 1 | Which page to retrieve (page 1 = first 20 items, page 2 = next 20 items, etc.) |
+| `limit` | integer | No | 20 | >= 1, <= 100 | How many flashcards to return per page |
+
+**Note**: 
+- `page=1` means "first page" (items 1-20)
+- `page=2` means "second page" (items 21-40)
+- `limit=20` means "show 20 items per page" (default)
+- `limit=100` means "show 100 items per page" (maximum allowed)
 
 ### Headers
 - `Authorization: Bearer {token}` (when authentication is enabled in production)
-- `Content-Type: application/json` (for response)
+- Response will have `Content-Type: application/json`
 
 ### Request Body
-None (GET request)
+None - GET requests don't have a body.
 
-### Example Requests
+**Get flashcards and authorization**
+The user_id comes from authentication:
+1. User logs in → receives a token
+2. Token is sent in `Authorization` header with each request
+3. Backend extracts user_id from the token
+4. Backend uses that user_id to filter flashcards
 
-**Basic request (defaults)**:
-```
-GET /api/flashcards
+This is more secure - users can't pretend to be someone else.
+
+### Example Requests with curl
+
+**Basic request (returns first 20 flashcards)**:
+```bash
+curl http://localhost:4321/api/flashcards
 ```
 
-**With pagination**:
-```
-GET /api/flashcards?page=2&limit=50
-```
-
-**With source filter**:
-```
-GET /api/flashcards?source=ai_generated
+**Get second page of flashcards**:
+```bash
+curl http://localhost:4321/api/flashcards?page=2
 ```
 
-**Combined parameters**:
-```
-GET /api/flashcards?page=1&limit=10&source=manual
+**Get 50 flashcards at once**:
+```bash
+curl http://localhost:4321/api/flashcards?limit=50
 ```
 
 ---
@@ -78,7 +86,6 @@ GET /api/flashcards?page=1&limit=10&source=manual
 ListFlashcardsQueryParams {
   page?: number;
   limit?: number;
-  source?: FlashcardSource;
 }
 ```
 
@@ -124,7 +131,7 @@ ErrorResponseDto {
 ```typescript
 FlashcardEntity = Tables<"flashcards"> {
   id: number;
-  user_id: string;
+  user_id: string;              // Excluded from response for security
   generation_id: number | null;
   front: string;
   back: string;
@@ -140,7 +147,7 @@ FlashcardEntity = Tables<"flashcards"> {
 
 ### Success Response (200 OK)
 
-**Structure**:
+**When user has flashcards**:
 ```json
 {
   "data": [
@@ -152,6 +159,15 @@ FlashcardEntity = Tables<"flashcards"> {
       "source": "ai_generated",
       "created_at": "2025-11-26T10:30:00Z",
       "updated_at": "2025-11-26T10:30:00Z"
+    },
+    {
+      "id": 122,
+      "generation_id": null,
+      "front": "What is 2+2?",
+      "back": "4",
+      "source": "manual",
+      "created_at": "2025-11-26T09:15:00Z",
+      "updated_at": "2025-11-26T09:15:00Z"
     }
   ],
   "pagination": {
@@ -163,7 +179,7 @@ FlashcardEntity = Tables<"flashcards"> {
 }
 ```
 
-**Empty Results**:
+**When user has no flashcards (empty result)**:
 ```json
 {
   "data": [],
@@ -175,6 +191,8 @@ FlashcardEntity = Tables<"flashcards"> {
   }
 }
 ```
+
+This is a **successful response** (200 OK), not an error. It simply means the user hasn't created any flashcards yet.
 
 ### Error Responses
 
@@ -226,17 +244,17 @@ API Endpoint Handler (src/pages/api/flashcards.ts)
     ↓
 Query Parameter Validation (Zod Schema)
     ↓
-Authentication Check (context.locals.supabase)
+Authentication Check (extract user_id from token)
     ↓
 Service Layer (flashcard.service.ts)
     ↓
 Database Query (Supabase Client)
-    ├─ SELECT flashcards with filters
-    └─ COUNT total matching records
+    ├─ SELECT flashcards WHERE user_id = ?
+    └─ COUNT total flashcards for this user
     ↓
-Data Transformation (Entity → DTO)
+Data Transformation (remove user_id from response)
     ↓
-Response Formatting
+Response Formatting (add pagination metadata)
     ↓
 Client Response
 ```
@@ -245,107 +263,129 @@ Client Response
 
 1. **Request Reception**:
    - Astro API endpoint receives GET request
-   - Extract query parameters from URL
+   - Extract query parameters from URL (page, limit)
 
 2. **Input Validation**:
    - Parse and validate query parameters using Zod schema
-   - Coerce string values to appropriate types
-   - Apply default values (page=1, limit=20)
-   - Validate constraints (page >= 1, limit <= 100)
-   - Validate source enum if provided
+   - Convert string values to numbers (e.g., "2" → 2)
+   - Apply default values if not provided (page=1, limit=20)
+   - Validate constraints (page >= 1, limit between 1 and 100)
 
 3. **Authentication** (when enabled):
    - Extract user from `context.locals.supabase.auth.getUser()`
+   - Get user_id from the authenticated user
    - Throw `UnauthorizedError` if user not authenticated
 
 4. **Service Layer Call**:
-   - Call `flashcardService.listFlashcards(userId, queryParams)`
-   - Service constructs database query with:
-     - WHERE user_id = {userId}
-     - AND source = {source} (if filter provided)
-     - ORDER BY created_at DESC
-     - LIMIT {limit}
-     - OFFSET (page - 1) * limit
+   - Call `flashcardService.listFlashcards(userId, page, limit)`
+   - Service constructs database query
 
 5. **Database Interaction**:
-   - Execute SELECT query using Supabase client
-   - Execute COUNT query for total items (or use Supabase count option)
-   - Leverage index `idx_flashcards_user_created` for performance
+   - Execute query to get flashcards:
+     - WHERE user_id = {authenticated_user_id}
+     - ORDER BY created_at DESC (newest first)
+     - LIMIT {limit}
+     - OFFSET (page - 1) * limit
+   - Execute COUNT query to get total number of flashcards
+   - Database uses index `idx_flashcards_user_created` for fast lookup
 
 6. **Data Transformation**:
-   - Map `FlashcardEntity[]` to `FlashcardDto[]`
-   - Exclude `user_id` field from response
-   - Format timestamps as ISO 8601 strings
+   - Convert `FlashcardEntity[]` to `FlashcardDto[]`
+   - Remove `user_id` field from each flashcard (security - don't expose user IDs)
 
 7. **Pagination Calculation**:
-   - Calculate `total_pages = Math.ceil(total_items / limit)`
-   - Build `PaginationDto` object
+   - Calculate total_pages = Math.ceil(total_items / limit)
+   - Build pagination metadata object
 
 8. **Response Formation**:
-   - Construct `ListFlashcardsResponseDto`
+   - Combine flashcards and pagination into response object
    - Set HTTP status 200
    - Return JSON response
 
 9. **Error Handling**:
-   - Catch and transform errors to appropriate HTTP responses
+   - If any error occurs, catch it and return appropriate error response
    - Log errors for debugging
 
-### Database Query Details
+### Database Query Example
 
-**Main Query**:
+**What the database query looks like** (simplified):
+
 ```sql
+-- Get flashcards for page 2 with limit 20
 SELECT id, generation_id, front, back, source, created_at, updated_at
 FROM flashcards
-WHERE user_id = $1
-  AND ($2::flashcard_source IS NULL OR source = $2)
+WHERE user_id = 'user-uuid-here'
 ORDER BY created_at DESC
-LIMIT $3 OFFSET $4;
-```
+LIMIT 20 OFFSET 20;  -- OFFSET = (page - 1) * limit = (2 - 1) * 20 = 20
 
-**Count Query**:
-```sql
+-- Get total count
 SELECT COUNT(*)
 FROM flashcards
-WHERE user_id = $1
-  AND ($2::flashcard_source IS NULL OR source = $2);
+WHERE user_id = 'user-uuid-here';
 ```
 
-**Index Used**: `idx_flashcards_user_created ON flashcards(user_id, created_at DESC)`
+**What is OFFSET?**
+OFFSET tells the database to skip a certain number of rows:
+- OFFSET 0: Start from the first row (page 1)
+- OFFSET 20: Skip first 20 rows, start from row 21 (page 2)
+- OFFSET 40: Skip first 40 rows, start from row 41 (page 3)
+
+**Why is large OFFSET slow?**
+If you request page 1000, the database must:
+1. Find all matching rows
+2. Sort them
+3. Skip the first 19,980 rows (throw them away)
+4. Return the next 20 rows
+
+This is wasteful for large page numbers. However, for MVP this is fine because:
+- Most users won't have thousands of flashcards
+- Most users won't navigate to page 1000
+- The database index makes this reasonably fast anyway
 
 ---
 
 ## 6. Security Considerations
 
 ### Authentication
-- **Development Mode**: Authentication not required (as per specification)
+- **Development Mode**: Authentication not required (for easier testing)
 - **Production Mode**: Require valid JWT token in Authorization header
 - **Implementation**: Check `context.locals.supabase.auth.getUser()`
 - **Error**: Return 401 Unauthorized if authentication fails
 
 ### Authorization
 - **User Isolation**: Always filter flashcards by authenticated user's ID
-- **No Cross-User Access**: Users cannot access other users' flashcards
+- **No Cross-User Access**: Users cannot see other users' flashcards
 - **Implementation**: Add `WHERE user_id = {authenticated_user_id}` to all queries
+- **Why it's secure**: Even if someone tries to hack the URL, they can only see their own flashcards
 
 ### Input Validation
-- **Query Parameter Sanitization**: Use Zod for type-safe validation
-- **SQL Injection Prevention**: Use parameterized queries (Supabase handles this)
-- **Enum Validation**: Strictly validate source parameter against FlashcardSource enum
+- **Query Parameter Sanitization**: Use Zod to validate all inputs
+- **SQL Injection Prevention**: Use parameterized queries (Supabase handles this automatically)
 - **Numeric Bounds**: Enforce min/max constraints on page and limit
 
+**What is SQL Injection?**
+It's a hacking technique where someone puts malicious code in your inputs.
+
+**Example of vulnerable code** (DON'T DO THIS):
+```typescript
+// BAD - vulnerable to SQL injection
+const query = `SELECT * FROM flashcards WHERE user_id = '${userId}'`;
+```
+
+If someone sets userId to `'; DELETE FROM flashcards; --`, it would delete all flashcards!
+
+**Safe code** (what we use):
+```typescript
+// GOOD - parameterized query
+supabase.from('flashcards').eq('user_id', userId)
+```
+
+Supabase treats the userId as data, not code, so it's safe. The hacker's malicious code is treated as a literal string, not executed.
+
 ### Data Exposure
-- **Exclude Sensitive Fields**: Remove `user_id` from response (use FlashcardDto)
-- **No Raw Database Errors**: Transform database errors to generic messages
+- **Exclude Sensitive Fields**: Remove `user_id` from response
+- **No Raw Database Errors**: Transform database errors to generic messages (don't expose database structure)
 - **Consistent Error Format**: Use ErrorResponseDto for all errors
-
-### Rate Limiting
-- **Consideration**: Implement rate limiting per user/IP to prevent abuse
-- **Recommendation**: 100 requests per minute per user
-- **Implementation**: Use middleware or external service (e.g., Redis)
-
-### CORS (if applicable)
-- **Configuration**: Set appropriate CORS headers for frontend domain
-- **Credentials**: Allow credentials if using cookie-based auth
 
 ---
 
@@ -353,140 +393,43 @@ WHERE user_id = $1
 
 ### Error Scenarios and Responses
 
-| Scenario | Error Type | HTTP Status | Error Code | Example Message |
-|----------|------------|-------------|------------|-----------------|
-| Invalid page number (< 1) | ValidationError | 400 | INVALID_PARAMETERS | "Page must be a positive integer" |
-| Invalid page number (non-numeric) | ValidationError | 400 | INVALID_PARAMETERS | "Page must be a number" |
-| Invalid limit (< 1) | ValidationError | 400 | INVALID_PARAMETERS | "Limit must be at least 1" |
-| Invalid limit (> 100) | ValidationError | 400 | INVALID_PARAMETERS | "Limit cannot exceed 100" |
-| Invalid source enum | ValidationError | 400 | INVALID_PARAMETERS | "Source must be one of: manual, ai_generated, ai_generated_edited" |
-| Missing authentication | UnauthorizedError | 401 | UNAUTHORIZED | "Authentication required. Please provide a valid access token." |
-| Invalid/expired token | UnauthorizedError | 401 | UNAUTHORIZED | "Invalid or expired authentication token" |
-| Database connection error | Error | 500 | INTERNAL_SERVER_ERROR | "An unexpected error occurred while processing your request" |
-| Unexpected service error | Error | 500 | INTERNAL_SERVER_ERROR | "An unexpected error occurred while processing your request" |
+| Scenario | HTTP Status | Error Code | Example Message |
+|----------|-------------|------------|-----------------|
+| Invalid page number (< 1) | 400 | INVALID_PARAMETERS | "Page must be a positive integer" |
+| Invalid page number (not a number) | 400 | INVALID_PARAMETERS | "Page must be a number" |
+| Invalid limit (< 1) | 400 | INVALID_PARAMETERS | "Limit must be at least 1" |
+| Invalid limit (> 100) | 400 | INVALID_PARAMETERS | "Limit cannot exceed 100" |
+| Missing authentication | 401 | UNAUTHORIZED | "Authentication required. Please provide a valid access token." |
+| Invalid/expired token | 401 | UNAUTHORIZED | "Invalid or expired authentication token" |
+| Database connection error | 500 | INTERNAL_SERVER_ERROR | "An unexpected error occurred while processing your request" |
+| Unexpected service error | 500 | INTERNAL_SERVER_ERROR | "An unexpected error occurred while processing your request" |
 
 ### Error Handling Strategy
 
-1. **Validation Errors**:
+1. **Validation Errors** (400):
    - Catch Zod validation errors
    - Transform to `ValidationError`
    - Extract field-level error details
    - Return 400 with detailed error information
 
-2. **Authentication Errors**:
+2. **Authentication Errors** (401):
    - Catch Supabase auth errors
    - Transform to `UnauthorizedError`
    - Return 401 with generic message (don't expose auth details)
 
-3. **Database Errors**:
+3. **Database Errors** (500):
    - Catch Supabase client errors
    - Log full error for debugging
-   - Return 500 with generic message (don't expose database details)
+   - Return 500 with generic message (don't expose database structure)
 
-4. **Unexpected Errors**:
+4. **Unexpected Errors** (500):
    - Catch all other errors
    - Log error with stack trace
    - Return 500 with generic message
 
-### Error Handler Implementation Pattern
-
-```typescript
-try {
-  // Main logic
-} catch (error) {
-  if (error instanceof ValidationError) {
-    return new Response(JSON.stringify({
-      error: {
-        code: "INVALID_PARAMETERS",
-        message: error.message,
-        details: error.details
-      }
-    }), { status: 400 });
-  }
-  
-  if (error instanceof UnauthorizedError) {
-    return new Response(JSON.stringify({
-      error: {
-        code: "UNAUTHORIZED",
-        message: error.message
-      }
-    }), { status: 401 });
-  }
-  
-  // Log unexpected errors
-  console.error("Unexpected error in GET /api/flashcards:", error);
-  
-  return new Response(JSON.stringify({
-    error: {
-      code: "INTERNAL_SERVER_ERROR",
-      message: "An unexpected error occurred while processing your request"
-    }
-  }), { status: 500 });
-}
-```
-
 ---
 
-## 8. Performance Considerations
-
-### Database Optimization
-
-**Index Usage**:
-- Primary index: `idx_flashcards_user_created ON flashcards(user_id, created_at DESC)`
-- This index optimally supports:
-  - Filtering by user_id
-  - Sorting by created_at DESC
-  - Efficient pagination with OFFSET/LIMIT
-
-**Query Optimization**:
-- Use SELECT with specific columns (avoid SELECT *)
-- Combine data query and count query if possible (Supabase supports this)
-- Consider using Supabase's range headers for pagination metadata
-
-**Pagination Strategy**:
-- OFFSET/LIMIT pagination is simple but can be slow for large offsets
-- For very large datasets, consider cursor-based pagination in future
-- Current approach is acceptable for typical use cases (< 10,000 flashcards per user)
-
-### Caching Strategy
-
-**Response Caching**:
-- Consider caching responses for short periods (30-60 seconds)
-- Invalidate cache on flashcard creation/update/deletion
-- Use user_id + query params as cache key
-
-**Database Connection Pooling**:
-- Supabase handles connection pooling automatically
-- Ensure proper connection cleanup in service layer
-
-### Response Size Optimization
-
-**Pagination Limits**:
-- Default limit: 20 items (reasonable for most UIs)
-- Maximum limit: 100 items (prevents excessive data transfer)
-- Encourage clients to use appropriate page sizes
-
-**Field Selection**:
-- Current implementation returns all flashcard fields
-- Consider adding field selection in future if needed
-
-### Monitoring
-
-**Performance Metrics to Track**:
-- Average response time
-- 95th/99th percentile response times
-- Database query duration
-- Error rates by type
-- Most common query patterns
-
-**Potential Bottlenecks**:
-- Large OFFSET values in pagination (mitigated by typical use patterns)
-- COUNT queries on large datasets (acceptable for current scale)
-- Concurrent requests from same user (rate limiting helps)
-
----
-
-## 9. Implementation Steps
+## 8. Implementation Steps
 
 ### Step 1: Create Zod Validation Schema
 
@@ -497,16 +440,16 @@ try {
 ```typescript
 export const listFlashcardsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  source: z.enum(["manual", "ai_generated", "ai_generated_edited"]).optional()
+  limit: z.coerce.number().int().min(1).max(100).default(20)
 });
 ```
 
-**Validation**:
-- Coerce string query params to numbers
-- Apply default values
-- Enforce constraints (page >= 1, limit 1-100)
-- Validate source enum
+**What this does**:
+- `z.coerce.number()`: Converts string "2" to number 2
+- `.int()`: Must be a whole number (not 2.5)
+- `.min(1)`: Must be at least 1
+- `.max(100)`: Cannot exceed 100 (for limit only)
+- `.default(1)` or `.default(20)`: Use this value if not provided
 
 ---
 
@@ -523,7 +466,6 @@ async listFlashcards(
   params: {
     page: number;
     limit: number;
-    source?: FlashcardSource;
   }
 ): Promise<{
   flashcards: FlashcardEntity[];
@@ -532,21 +474,18 @@ async listFlashcards(
 ```
 
 **Implementation Details**:
-1. Calculate offset: `(page - 1) * limit`
+1. Calculate offset: `const offset = (page - 1) * limit`
 2. Build Supabase query:
-   - Start with `supabase.from('flashcards').select('*', { count: 'exact' })`
-   - Add `.eq('user_id', userId)`
-   - Add `.eq('source', source)` if source provided
-   - Add `.order('created_at', { ascending: false })`
-   - Add `.range(offset, offset + limit - 1)`
-3. Execute query and extract data + count
-4. Handle errors (throw appropriate custom errors)
-5. Return flashcards array and total count
-
-**Error Handling**:
-- Catch Supabase errors
-- Log errors for debugging
-- Throw generic Error for unexpected issues
+   ```typescript
+   const { data, count, error } = await supabase
+     .from('flashcards')
+     .select('*', { count: 'exact' })
+     .eq('user_id', userId)
+     .order('created_at', { ascending: false })
+     .range(offset, offset + limit - 1);
+   ```
+3. Handle errors (throw if query fails)
+4. Return flashcards array and total count
 
 ---
 
@@ -554,260 +493,189 @@ async listFlashcards(
 
 **File**: `src/pages/api/flashcards.ts`
 
-**Task**: Implement GET handler
+**Task**: Implement GET handler (or add to existing file if it already has POST)
 
 **Implementation**:
 ```typescript
 export const prerender = false;
 
 export async function GET(context: APIContext): Promise<Response> {
-  // Implementation here
+  try {
+    // 1. Extract and validate query parameters
+    const queryParams = {
+      page: context.url.searchParams.get('page'),
+      limit: context.url.searchParams.get('limit')
+    };
+    
+    const validatedParams = listFlashcardsQuerySchema.parse(queryParams);
+    
+    // 2. Get authenticated user
+    const { data: { user }, error: authError } = await context.locals.supabase.auth.getUser();
+    if (authError || !user) {
+      throw new UnauthorizedError();
+    }
+    
+    // 3. Call service
+    const { flashcards, totalCount } = await flashcardService.listFlashcards(
+      user.id,
+      validatedParams
+    );
+    
+    // 4. Transform to DTOs (remove user_id)
+    const flashcardDtos: FlashcardDto[] = flashcards.map(({ user_id, ...rest }) => rest);
+    
+    // 5. Calculate pagination
+    const totalPages = Math.ceil(totalCount / validatedParams.limit);
+    const pagination: PaginationDto = {
+      page: validatedParams.page,
+      limit: validatedParams.limit,
+      total_pages: totalPages,
+      total_items: totalCount
+    };
+    
+    // 6. Return response
+    return new Response(
+      JSON.stringify({ data: flashcardDtos, pagination }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+    
+  } catch (error) {
+    // Error handling (see Step 4)
+  }
 }
 ```
 
-**Handler Logic**:
-1. Extract query parameters from `context.url.searchParams`
-2. Validate using `listFlashcardsQuerySchema`
-3. Get authenticated user from `context.locals.supabase.auth.getUser()`
-4. Call `flashcardService.listFlashcards(userId, validatedParams)`
-5. Transform entities to DTOs (exclude user_id)
-6. Calculate pagination metadata
-7. Build response object
-8. Return JSON response with status 200
-
 ---
 
-### Step 4: Transform Entities to DTOs
+### Step 4: Implement Error Handling
 
-**Location**: Within GET handler
-
-**Task**: Map database entities to API DTOs
+**Location**: Wrap entire GET handler in try-catch
 
 **Implementation**:
 ```typescript
-const flashcardDtos: FlashcardDto[] = flashcards.map(({ user_id, ...rest }) => rest);
-```
-
-**Ensure**:
-- `user_id` field is excluded
-- All other fields are preserved
-- Timestamps are in ISO 8601 format (Supabase returns this by default)
-
----
-
-### Step 5: Calculate Pagination Metadata
-
-**Location**: Within GET handler
-
-**Task**: Build PaginationDto object
-
-**Implementation**:
-```typescript
-const totalPages = Math.ceil(totalCount / limit);
-
-const pagination: PaginationDto = {
-  page,
-  limit,
-  total_pages: totalPages,
-  total_items: totalCount
-};
-```
-
-**Edge Cases**:
-- If totalCount is 0, total_pages should be 0
-- Ensure integer division for total_pages
-
----
-
-### Step 6: Implement Error Handling
-
-**Location**: Wrap entire GET handler
-
-**Task**: Add comprehensive try-catch blocks
-
-**Implementation Pattern**:
-1. Wrap main logic in try-catch
-2. Handle `ValidationError` → 400 response
-3. Handle `UnauthorizedError` → 401 response
-4. Handle generic `Error` → 500 response
-5. Log all errors for debugging
-6. Return consistent `ErrorResponseDto` format
-
-**Error Response Builder**:
-```typescript
-function buildErrorResponse(
-  code: string,
-  message: string,
-  status: number,
-  details?: unknown
-): Response {
+catch (error) {
+  if (error instanceof ValidationError) {
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "INVALID_PARAMETERS",
+          message: error.message,
+          details: error.details
+        }
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  
+  if (error instanceof UnauthorizedError) {
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "UNAUTHORIZED",
+          message: error.message
+        }
+      }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  
+  // Log unexpected errors
+  console.error("Unexpected error in GET /api/flashcards:", error);
+  
   return new Response(
     JSON.stringify({
-      error: { code, message, details }
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "An unexpected error occurred while processing your request"
+      }
     }),
-    {
-      status,
-      headers: { "Content-Type": "application/json" }
-    }
+    { status: 500, headers: { "Content-Type": "application/json" } }
   );
 }
 ```
 
 ---
 
-### Step 7: Add Response Headers
+### Step 5: Test Implementation
 
-**Location**: All response returns
+**Test with curl**:
 
-**Task**: Set appropriate HTTP headers
+```bash
+# Test 1: Basic request (should return first 20 flashcards)
+curl http://localhost:4321/api/flashcards
 
-**Headers to Include**:
+# Test 2: Get second page
+curl http://localhost:4321/api/flashcards?page=2
+
+# Test 3: Request 50 flashcards
+curl http://localhost:4321/api/flashcards?limit=50
+
+# Test 4: Invalid page (should return 400 error)
+curl http://localhost:4321/api/flashcards?page=0
+
+# Test 5: Invalid limit (should return 400 error)
+curl http://localhost:4321/api/flashcards?limit=200
+```
+
+**Expected results**:
+- Tests 1-3: Should return 200 OK with flashcards and pagination
+- Tests 4-5: Should return 400 Bad Request with error message
+
+---
+
+### Step 6: Verify Database Performance
+
+**Task**: Confirm query uses the appropriate index
+
+**How to check**:
+1. Run EXPLAIN ANALYZE on the query in Supabase SQL editor
+2. Confirm `idx_flashcards_user_created` is used
+3. Check query execution time (should be < 50ms for typical data)
+
+**SQL to test**:
+```sql
+EXPLAIN ANALYZE
+SELECT id, generation_id, front, back, source, created_at, updated_at
+FROM flashcards
+WHERE user_id = 'some-user-id'
+ORDER BY created_at DESC
+LIMIT 20 OFFSET 0;
+```
+
+**What to look for**:
+- Should see "Index Scan using idx_flashcards_user_created"
+- Execution time should be low (< 50ms)
+
+---
+
+### Step 7: Documentation
+
+**Tasks**:
+1. Add JSDoc comments to service method
+2. Add inline comments for complex logic
+3. Document any edge cases
+
+**Example JSDoc**:
 ```typescript
-{
-  "Content-Type": "application/json",
-  "Cache-Control": "private, no-cache" // Prevent caching of user-specific data
+/**
+ * List flashcards for a user with pagination
+ * 
+ * @param userId - The authenticated user's ID
+ * @param params - Pagination parameters (page and limit)
+ * @returns Flashcards array and total count
+ * @throws Error if database query fails
+ */
+async listFlashcards(userId: string, params: { page: number; limit: number }) {
+  // implementation
 }
 ```
 
 ---
 
-### Step 8: Test Implementation
-
-**Manual Testing**:
-1. Test default parameters (no query params)
-2. Test custom pagination (page=2, limit=50)
-3. Test source filtering (each enum value)
-4. Test invalid parameters (negative page, limit > 100, invalid source)
-5. Test empty results (new user with no flashcards)
-6. Test edge cases (page beyond total_pages)
-
-**Test Cases**:
-```bash
-# Default request
-GET /api/flashcards
-
-# Custom pagination
-GET /api/flashcards?page=2&limit=10
-
-# Source filter
-GET /api/flashcards?source=manual
-GET /api/flashcards?source=ai_generated
-GET /api/flashcards?source=ai_generated_edited
-
-# Invalid parameters
-GET /api/flashcards?page=0          # Should return 400
-GET /api/flashcards?page=-1         # Should return 400
-GET /api/flashcards?limit=0         # Should return 400
-GET /api/flashcards?limit=101       # Should return 400
-GET /api/flashcards?source=invalid  # Should return 400
-
-# Edge cases
-GET /api/flashcards?page=999        # Should return empty array with valid pagination
-```
-
----
-
-### Step 9: Verify Database Performance
-
-**Task**: Confirm query uses appropriate index
-
-**Verification**:
-1. Run EXPLAIN ANALYZE on generated queries
-2. Confirm `idx_flashcards_user_created` is used
-3. Check query execution time
-4. Test with various data volumes
-
-**Expected Query Plan**:
-```
-Index Scan using idx_flashcards_user_created on flashcards
-  Index Cond: (user_id = '...')
-  Filter: (source = '...')  -- if source filter applied
-  Rows: ...
-```
-
----
-
-### Step 10: Documentation and Code Review
-
-**Tasks**:
-1. Add JSDoc comments to service method
-2. Add inline comments for complex logic
-3. Update API documentation if needed
-4. Request code review from team
-5. Address review feedback
-
-**Documentation Checklist**:
-- [ ] Service method has JSDoc with description, params, returns
-- [ ] Complex logic has explanatory comments
-- [ ] Error handling is documented
-- [ ] Type definitions are clear
-- [ ] Edge cases are noted
-
----
-
-## 10. Testing Checklist
-
-### Functional Tests
-- [ ] Returns flashcards for authenticated user
-- [ ] Sorts by created_at DESC
-- [ ] Applies default pagination (page=1, limit=20)
-- [ ] Respects custom page parameter
-- [ ] Respects custom limit parameter
-- [ ] Filters by source when provided
-- [ ] Returns correct pagination metadata
-- [ ] Returns empty array for no results
-- [ ] Excludes user_id from response
-
-### Validation Tests
-- [ ] Rejects page < 1
-- [ ] Rejects limit < 1
-- [ ] Rejects limit > 100
-- [ ] Rejects invalid source enum
-- [ ] Coerces string numbers to integers
-- [ ] Applies default values correctly
-
-### Security Tests
-- [ ] Returns only authenticated user's flashcards
-- [ ] Returns 401 when authentication missing (production)
-- [ ] Cannot access other users' flashcards
-- [ ] No SQL injection via query parameters
-
-### Performance Tests
-- [ ] Query uses idx_flashcards_user_created index
-- [ ] Response time < 200ms for typical dataset
-- [ ] Handles large page numbers gracefully
-- [ ] Handles maximum limit (100) efficiently
-
-### Error Handling Tests
-- [ ] Returns 400 for validation errors
-- [ ] Returns 401 for auth errors (production)
-- [ ] Returns 500 for unexpected errors
-- [ ] Error responses match ErrorResponseDto format
-- [ ] Errors are logged appropriately
-
----
-
-## 11. Future Enhancements
-
-### Potential Improvements
-1. **Cursor-based Pagination**: For better performance with large datasets
-2. **Field Selection**: Allow clients to specify which fields to return
-3. **Additional Filters**: Filter by date range, search by text, etc.
-4. **Sorting Options**: Allow sorting by different fields (front, back, updated_at)
-5. **Response Caching**: Cache responses for better performance
-6. **Batch Requests**: Support requesting multiple pages in one call
-7. **GraphQL Alternative**: Consider GraphQL for more flexible querying
-
-### Monitoring and Analytics
-1. Track most common query patterns
-2. Monitor response times by page size
-3. Identify slow queries for optimization
-4. Track error rates and types
-5. Monitor cache hit rates (if caching implemented)
-
----
-
-## 12. Related Endpoints
+## 9. Related Endpoints
 
 This endpoint is part of the Flashcards resource. Related endpoints include:
 
@@ -818,8 +686,7 @@ This endpoint is part of the Flashcards resource. Related endpoints include:
 - `DELETE /api/flashcards/:id` - Delete flashcard
 
 Ensure consistent patterns across all flashcard endpoints for:
-- Error handling
-- Authentication
-- Response formatting
-- Validation approach
-
+- Error handling (same error format)
+- Authentication (same auth check)
+- Response formatting (same JSON structure)
+- Validation approach (use Zod schemas)
