@@ -1,5 +1,3 @@
-export const prerender = false;
-
 import type { APIRoute } from "astro";
 import type { GenerateFlashcardsCommand, GenerationResponseDto, ApiResponseDto, ErrorResponseDto } from "../../types";
 import { generateFlashcardsSchema } from "../../lib/schemas/generation.schemas";
@@ -7,6 +5,8 @@ import { generateFlashcards } from "../../lib/services/generation.service";
 import { RateLimitError, ServiceUnavailableError, GenerationFailedError } from "../../lib/errors/generation.errors";
 import { ZodError } from "zod";
 import { DEFAULT_USER_ID } from "../../db/supabase.client";
+
+export const prerender = false;
 
 /**
  * POST /api/generations
@@ -35,6 +35,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Use default user ID (auth will be implemented later)
     const userId = DEFAULT_USER_ID;
 
+    console.log(request);
+
     // Parse request body
     let body: unknown;
     try {
@@ -56,6 +58,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     let validatedData: GenerateFlashcardsCommand;
     try {
       validatedData = generateFlashcardsSchema.parse(body);
+      console.log(validatedData);
     } catch (error) {
       if (error instanceof ZodError) {
         const firstError = error.errors[0];
@@ -84,6 +87,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       user_id: userId,
     });
 
+    console.log(result);
+
     // Return success response
     const responseData: GenerationResponseDto = {
       generation_id: result.generation_id,
@@ -92,6 +97,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
       generated_count: result.generated_count,
       candidates: result.candidates,
     };
+
+    console.log(responseData);
 
     return new Response(JSON.stringify({ data: responseData } satisfies ApiResponseDto<GenerationResponseDto>), {
       status: 201,
@@ -143,7 +150,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       JSON.stringify({
         error: {
           code: "GENERATION_FAILED",
-          message: "An unexpected error occurred while generating flashcards. Please try again later.",
+          message: "An unexpected error occurred while generating flashcards:( Please try again later.",
         },
       } satisfies ErrorResponseDto),
       { status: 500, headers: { "Content-Type": "application/json" } }
