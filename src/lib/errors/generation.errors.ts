@@ -1,45 +1,12 @@
 /**
  * Custom error classes for flashcard generation operations
  *
- * These errors are used throughout the generation service and API endpoint
- * to provide consistent error handling and appropriate HTTP status codes.
+ * These errors are specific to AI generation operations. For common HTTP errors
+ * (validation, auth, rate limiting), use the shared errors from common.errors.ts.
  */
 
-/**
- * Thrown when request validation fails
- * Maps to HTTP 400 Bad Request
- */
-export class ValidationError extends Error {
-  constructor(
-    message: string,
-    public details?: Record<string, unknown>
-  ) {
-    super(message);
-    this.name = "ValidationError";
-  }
-}
-
-/**
- * Thrown when authentication is required but missing or invalid
- * Maps to HTTP 401 Unauthorized
- */
-export class UnauthorizedError extends Error {
-  constructor(message = "Authentication required. Please provide a valid access token.") {
-    super(message);
-    this.name = "UnauthorizedError";
-  }
-}
-
-/**
- * Thrown when rate limit is exceeded (from OpenRouter or custom limits)
- * Maps to HTTP 429 Too Many Requests
- */
-export class RateLimitError extends Error {
-  constructor(message = "Too many generation requests. Please try again in a few minutes.") {
-    super(message);
-    this.name = "RateLimitError";
-  }
-}
+// Re-export common errors for convenience
+export { ValidationError, UnauthorizedError, RateLimitError } from "./common.errors";
 
 /**
  * Thrown when AI service is unavailable or times out
