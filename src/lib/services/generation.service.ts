@@ -6,6 +6,38 @@ import { calculateMD5Hash } from "../utils/hash.utils";
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_TIMEOUT = 60000; // 60 seconds
 
+/**
+ * Mock flashcard candidates for development/testing
+ * Used when OPENROUTER_API_KEY is not set or MOCK_AI_SERVICE=true
+ */
+function generateMockCandidates(sourceText: string): FlashcardCandidateDto[] {
+  const textLength = sourceText.length;
+  const wordCount = sourceText.split(/\s+/).length;
+
+  return [
+    {
+      front: "What is the main topic of this text?",
+      back: `The text discusses a topic with approximately ${wordCount} words.`,
+    },
+    {
+      front: "How long is the source text?",
+      back: `The source text is ${textLength} characters long.`,
+    },
+    {
+      front: "What is a key concept mentioned?",
+      back: "This is a mock flashcard generated for testing purposes.",
+    },
+    {
+      front: "Why is this topic important?",
+      back: "Mock response: This helps understand the subject matter better.",
+    },
+    {
+      front: "What should you remember about this?",
+      back: "Mock response: Key points from the source material.",
+    },
+  ];
+}
+
 interface OpenRouterMessage {
   role: "system" | "user" | "assistant";
   content: string;
@@ -50,12 +82,18 @@ Example output format:
 
 /**
  * Calls OpenRouter API to generate flashcard candidates
+ * Falls back to mock data if API key is not configured or MOCK_AI_SERVICE is enabled
  */
 async function callOpenRouterAPI(sourceText: string, model: string): Promise<FlashcardCandidateDto[]> {
   const apiKey = import.meta.env.OPENROUTER_API_KEY;
+  const useMock = import.meta.env.MOCK_AI_SERVICE === "true" || !apiKey;
 
-  if (!apiKey) {
-    throw new GenerationFailedError("AI service configuration error. Please contact support.");
+  // Use mock data for development/testing
+  if (useMock) {
+    console.log("🤖 Using mock AI service (OPENROUTER_API_KEY not set or MOCK_AI_SERVICE=true)");
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000));
+    return generateMockCandidates(sourceText);
   }
 
   const requestBody: OpenRouterRequest = {
