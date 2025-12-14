@@ -240,18 +240,18 @@ export async function listFlashcards(
     .range(from, to);
 
   // Handle database errors
-  // Note: Supabase has a known bug where requesting a range completely beyond
-  // available data returns a malformed error object: { message: '{"' }
-  // We treat this specific case as "no results" rather than an error.
-  // All other legitimate errors are thrown.
+  // Note: We encountered an issue where Supabase returns a malformed error when
+  // requesting a range beyond available data (e.g., { message: '{"' }).
+  // We've added a workaround to handle this gracefully by treating it as empty results.
+  // All other legitimate errors are thrown normally.
   if (result.error) {
     const isMalformedRangeError = result.error.message === '{"' || result.error.message === "{";
-    
+
     if (!isMalformedRangeError) {
       console.error("Database error in listFlashcards:", result.error);
       throw new Error(`Failed to fetch flashcards: ${result.error.message}`);
     }
-    
+
     // For malformed range errors, we'll return empty results below
     // This is acceptable behavior - requesting page 10 when there's only 1 page
     // should return empty results, not an error
