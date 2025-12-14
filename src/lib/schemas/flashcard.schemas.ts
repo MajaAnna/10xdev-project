@@ -73,3 +73,37 @@ export const createFlashcardSchema = z
  * Use this type for validated data in service layer
  */
 export type CreateFlashcardInput = z.infer<typeof createFlashcardSchema>;
+
+/**
+ * Schema for listing flashcards (GET /api/flashcards)
+ *
+ * Query Parameters:
+ * - page: Positive integer, defaults to 1 (first page)
+ * - limit: Integer between 1 and 100, defaults to 20
+ *
+ * Validation Logic:
+ * - .nullable() handles null values from missing query params
+ * - .transform() converts null to default value and validates
+ * - z.coerce.number() converts string query params to numbers
+ * - .int() ensures whole numbers only
+ * - .min(1) ensures positive values
+ * - .max(100) prevents excessive data requests
+ */
+export const listFlashcardsQuerySchema = z.object({
+  page: z
+    .string()
+    .nullable()
+    .transform((val) => (val === null ? "1" : val))
+    .pipe(z.coerce.number().int().min(1, "Page must be a positive integer")),
+  limit: z
+    .string()
+    .nullable()
+    .transform((val) => (val === null ? "20" : val))
+    .pipe(z.coerce.number().int().min(1, "Limit must be at least 1").max(100, "Limit cannot exceed 100")),
+});
+
+/**
+ * Inferred TypeScript type from listFlashcardsQuerySchema
+ * Use this type for validated query parameters
+ */
+export type ListFlashcardsQueryInput = z.infer<typeof listFlashcardsQuerySchema>;
