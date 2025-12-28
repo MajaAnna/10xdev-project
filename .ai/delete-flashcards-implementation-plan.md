@@ -93,8 +93,7 @@ Below are `cURL` commands to manually test the `DELETE /api/flashcards/:id` endp
 Deletes an existing flashcard that belongs to the authenticated user.
 
 ```bash
-curl -X DELETE "http://localhost:4321/api/flashcards/VALID_FLASHCARD_ID" \
-     -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+curl -X DELETE "http://localhost:4321/api/flashcards/1" \
      -H "Content-Type: application/json"
 ```
 
@@ -108,32 +107,12 @@ curl -X DELETE "http://localhost:4321/api/flashcards/VALID_FLASHCARD_ID" \
 }
 ```
 
-### 9.2. Missing Authentication (401 Unauthorized)
-
-Attempts to delete a flashcard without providing a JWT token.
-
-```bash
-curl -X DELETE "http://localhost:4321/api/flashcards/VALID_FLASHCARD_ID" \
-     -H "Content-Type: application/json"
-```
-
-**Expected Response (401 Unauthorized):**
-```json
-{
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "Authentication required. Please provide a valid access token."
-  }
-}
-```
-
 ### 9.3. Invalid Flashcard ID (400 Bad Request)
 
 Attempts to delete a flashcard with an `id` that is not a positive integer (e.g., "abc" or "0").
 
 ```bash
 curl -X DELETE "http://localhost:4321/api/flashcards/abc" \
-     -H "Authorization: Bearer YOUR_JWT_TOKEN" \
      -H "Content-Type: application/json"
 ```
 
@@ -159,7 +138,6 @@ Attempts to delete a flashcard that does not exist or exists but belongs to anot
 
 ```bash
 curl -X DELETE "http://localhost:4321/api/flashcards/INVALID_FLASHCARD_ID" \
-     -H "Authorization: Bearer YOUR_JWT_TOKEN" \
      -H "Content-Type: application/json"
 ```
 
