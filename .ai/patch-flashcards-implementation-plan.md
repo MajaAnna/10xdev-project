@@ -134,3 +134,44 @@ Errors will be handled using custom error classes from `@src/lib/errors/common.e
      - 404 response for a non-existent `id`.
      - 401 response for a request without a token.
      - Attempt to update a flashcard belonging to another user.
+
+   #### cURL Examples
+
+   Use these `cURL` commands to test the endpoint. Replace `[ID]` with a valid flashcard ID.
+
+   **1. Successful Update (only front)**
+   ```bash
+   curl --location --request PATCH 'http://localhost:4321/api/flashcards/1' \
+   --header 'Content-Type: application/json' \
+   --data '{
+       "front": "What is the new capital of France?"
+   }'
+   ```
+
+   **2. Invalid Request (Empty Body)**
+   *Should return a 400 Bad Request error.*
+   ```bash
+   curl --location --request PATCH 'http://localhost:4321/api/flashcards/1' \
+   --header 'Content-Type: application/json' \
+   --data '{}'
+   ```
+
+   **3. Validation Error (Field Too Long)**
+   *Should return a 400 Bad Request error.*
+   ```bash
+   curl --location --request PATCH 'http://localhost:4321/api/flashcards/1' \
+   --header 'Content-Type: application/json' \
+   --data '{
+       "front": "This is a very long question that is definitely going to be more than two hundred characters long, which should trigger the validation error in the Zod schema and return a 400 Bad Request response from the server endpoint handler that we have just implemented."
+   }'
+   ```
+
+   **4. Not Found Error**
+   *Should return a 404 Not Found error.*
+   ```bash
+   curl --location --request PATCH 'http://localhost:4321/api/flashcards/99999' \
+   --header 'Content-Type: application/json' \
+   --data '{
+       "front": "This will not work."
+   }'
+   ```

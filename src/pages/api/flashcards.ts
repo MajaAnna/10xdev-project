@@ -235,7 +235,11 @@ export const GET: APIRoute = async ({ url, locals }) => {
     });
 
     // Step 4: Map to DTOs (exclude user_id from each flashcard)
-    const flashcardDtos: FlashcardDto[] = flashcards.map(({ user_id, ...rest }) => rest);
+    const flashcardDtos: FlashcardDto[] = flashcards.map((flashcard) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { user_id, ...rest } = flashcard;
+      return rest;
+    });
 
     // Step 5: Calculate pagination metadata
     const totalPages = Math.ceil(totalCount / validatedParams.limit);
@@ -258,6 +262,15 @@ export const GET: APIRoute = async ({ url, locals }) => {
     });
   } catch (error) {
     // Log unexpected errors for debugging
+    console.error("Unexpected error in GET /api/flashcards:", error);
+
+    // Return generic error message (don't expose internal details)
+    return new Response(
+      JSON.stringify({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "An unexpected error occurred while processing your request",
+        },
       } satisfies ErrorResponseDto),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
