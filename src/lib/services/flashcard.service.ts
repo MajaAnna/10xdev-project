@@ -7,7 +7,7 @@
 
 import type { SupabaseClient } from "../../db/supabase.client";
 import type { FlashcardEntity, FlashcardSource, CreateFlashcardCommand } from "../../types";
-import { GenerationNotFoundError, FlashcardCreationError } from "../errors/flashcard.errors";
+import { GenerationNotFoundError, FlashcardCreationError, NotFoundError } from "../errors/flashcard.errors";
 
 /**
  * Validates that a generation exists and belongs to the specified user
@@ -264,4 +264,65 @@ export async function listFlashcards(
     flashcards: (result.data as FlashcardEntity[]) || [],
     totalCount: result.count || 0,
   };
+}
+
+/**
+ * Updates an existing flashcard
+ *
+ * This function handles the business logic for the PATCH /api/flashcards/:id endpoint.
+ * It finds the flashcard by id and user_id, determines the new `source` value if the
+ * original was `ai_generated`, and then updates the record in the database.
+ *
+ * @param supabase - Supabase client instance
+ * @param id - The ID of the flashcard to update
+ * @param userId - The ID of the user requesting the update
+ * @param data - The update payload (front and/or back)
+ * @returns The updated flashcard entity
+ * @throws {NotFoundError} If the flashcard is not found or does not belong to the user
+ *
+ * @example
+ * const updatedFlashcard = await updateFlashcard(supabase, 123, 'user-uuid', {
+ *   front: "New front content"
+ * });
+ */
+export async function updateFlashcard(
+  supabase: SupabaseClient,
+  id: number,
+  userId: string,
+  data: { front?: string; back?: string }
+): Promise<FlashcardEntity> {
+  // First, retrieve the existing flashcard to check ownership and current source
+  const { data: existingFlashcard, error: fetchError } = await supabase
+    .from("flashcards")
+    .select("source")
+    .eq("id", id)
+    .eq("user_id", userId)
+    .single();
+
+  if (fetchError || !existingFlashcard) {
+    throw new NotFoundError("Flashcard not found or you do not have permission to edit it.", "flashcard");
+  }
+
+  const updatePayload: { front?: string; back?: string; source?: FlashcardSource } = { ...data };
+
+  // Business logic: if the source is 'ai_generated', change it to 'ai_generated_edited'
+  if (existingFlashcard.source === "ai_generated") {
+    updatePayload.source = "ai_generated_edited";
+  }
+
+  // Perform the update
+  const { data: updatedFlashcard, error: updateError } = await supabase
+    .from("flashcards")
+    .update(updatePayload)
+    .eq("id", id)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (updateError || !updatedFlashcard) {
+    // This could happen in a race condition or if the DB is unavailable
+    throw new FlashcardCreationError("Failed to update flashcard", updateError);
+  }
+
+  return updatedFlashcard as FlashcardEntity;
 }

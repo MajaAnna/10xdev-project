@@ -107,3 +107,31 @@ export const listFlashcardsQuerySchema = z.object({
  * Use this type for validated query parameters
  */
 export type ListFlashcardsQueryInput = z.infer<typeof listFlashcardsQuerySchema>;
+
+/**
+ * Schema for updating a flashcard (PATCH /api/flashcards/:id)
+ *
+ * Business Rules:
+ * - At least one field (front or back) must be provided
+ * - Fields are optional but must meet length requirements if provided
+ *
+ * Validation Logic:
+ * - .refine() checks that at least one of `front` or `back` is defined
+ * - .optional() allows fields to be omitted from the request body
+ * - .trim() removes whitespace before validation
+ */
+export const UpdateFlashcardSchema = z
+  .object({
+    front: z.string().trim().min(1, "Front cannot be empty").max(200, "Front cannot exceed 200 characters").optional(),
+    back: z.string().trim().min(1, "Back cannot be empty").max(500, "Back cannot exceed 500 characters").optional(),
+  })
+  .refine((data) => data.front !== undefined || data.back !== undefined, {
+    message: "At least one field (front or back) must be provided",
+    path: ["front", "back"],
+  });
+
+/**
+ * Inferred TypeScript type from UpdateFlashcardSchema
+ * Use this type for validated data in service layer
+ */
+export type UpdateFlashcardDto = z.infer<typeof UpdateFlashcardSchema>;
