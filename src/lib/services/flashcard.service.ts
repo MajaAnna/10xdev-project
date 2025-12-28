@@ -326,3 +326,35 @@ export async function updateFlashcard(
 
   return updatedFlashcard as FlashcardEntity;
 }
+
+/**
+ * Deletes a flashcard for a specific user.
+ *
+ * This function performs a delete operation on the 'flashcards' table.
+ * It ensures that the flashcard exists and belongs to the specified user
+ * before deletion.
+ *
+ * @param supabase - The Supabase client instance.
+ * @param flashcardId - The ID of the flashcard to delete.
+ * @param userId - The ID of the user requesting the deletion.
+ * @returns The ID of the deleted flashcard.
+ * @throws {NotFoundError} If no flashcard is found with the given ID and user ID.
+ * @throws {Error} If the database operation fails for other reasons.
+ */
+export async function deleteFlashcard(supabase: SupabaseClient, flashcardId: number, userId: string): Promise<number> {
+  const { error, count } = await supabase
+    .from("flashcards")
+    .delete({ count: "exact" })
+    .match({ id: flashcardId, user_id: userId });
+
+  if (error) {
+    console.error("Database error in deleteFlashcard:", error);
+    throw new Error(`Failed to delete flashcard: ${error.message}`);
+  }
+
+  if (count === 0) {
+    throw new NotFoundError("Flashcard not found or you do not have permission to delete it.", "flashcard");
+  }
+
+  return flashcardId;
+}

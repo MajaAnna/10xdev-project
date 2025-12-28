@@ -83,3 +83,92 @@ The endpoint will return standardized error responses in the `ErrorResponseDto` 
 8.  **Format Responses**:
     - In the main `try` block, upon successful deletion, create the `DeleteFlashcardResponseDto` and return it inside an `ApiResponseDto` with a `200 OK` status.
     - In the `catch` block, inspect the error type (`NotFoundError`, `ValidationError`, etc.) and return the appropriate HTTP status code and `ErrorResponseDto`.
+
+## 9. Manual Testing / cURL Examples
+
+Below are `cURL` commands to manually test the `DELETE /api/flashcards/:id` endpoint for different scenarios. Replace `YOUR_BASE_URL`, `YOUR_JWT_TOKEN`, `VALID_FLASHCARD_ID`, and `INVALID_FLASHCARD_ID` with actual values before executing.
+
+### 9.1. Successful Deletion (200 OK)
+
+Deletes an existing flashcard that belongs to the authenticated user.
+
+```bash
+curl -X DELETE "http://localhost:4321/api/flashcards/VALID_FLASHCARD_ID" \
+     -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     -H "Content-Type: application/json"
+```
+
+**Expected Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Flashcard deleted successfully.",
+    "deleted_id": VALID_FLASHCARD_ID
+  }
+}
+```
+
+### 9.2. Missing Authentication (401 Unauthorized)
+
+Attempts to delete a flashcard without providing a JWT token.
+
+```bash
+curl -X DELETE "http://localhost:4321/api/flashcards/VALID_FLASHCARD_ID" \
+     -H "Content-Type: application/json"
+```
+
+**Expected Response (401 Unauthorized):**
+```json
+{
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Authentication required. Please provide a valid access token."
+  }
+}
+```
+
+### 9.3. Invalid Flashcard ID (400 Bad Request)
+
+Attempts to delete a flashcard with an `id` that is not a positive integer (e.g., "abc" or "0").
+
+```bash
+curl -X DELETE "http://localhost:4321/api/flashcards/abc" \
+     -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     -H "Content-Type: application/json"
+```
+
+**Expected Response (400 Bad Request):**
+```json
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "message": "Invalid flashcard ID provided.",
+    "details": [
+      {
+        "field": "id",
+        "message": "Expected number, received nan"
+      }
+    ]
+  }
+}
+```
+
+### 9.4. Flashcard Not Found or Not Owned (404 Not Found)
+
+Attempts to delete a flashcard that does not exist or exists but belongs to another user.
+
+```bash
+curl -X DELETE "http://localhost:4321/api/flashcards/INVALID_FLASHCARD_ID" \
+     -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     -H "Content-Type: application/json"
+```
+
+**Expected Response (404 Not Found):**
+```json
+{
+  "error": {
+    "code": "FLASHCARD_NOT_FOUND",
+    "message": "Flashcard not found or you do not have permission to delete it."
+  }
+}
+```
