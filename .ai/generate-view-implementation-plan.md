@@ -3,6 +3,8 @@
 ## 1. Przegląd
 Widok "Flashcards Generator" to centralne miejsce w aplikacji, przeznaczone do generowania fiszek za pomocą AI. Umożliwia użytkownikom wklejenie tekstu źródłowego, wygenerowanie na jego podstawie propozycji fiszek, a następnie ich przeglądanie, edycję i zapisywanie. Widok ten łączy w sobie formularz do generowania i interfejs do recenzji w jeden płynny proces, zgodnie z historiami użytkowników US-001 do US-005.
 
+**Uwaga**: Funkcjonalność masowego zapisu ("Save all") nie jest częścią MVP. W obecnej wersji, przycisk będzie jedynie wyświetlał informację o tym, że funkcja zostanie wdrożona w przyszłości.
+
 ## 2. Routing widoku
 Widok będzie dostępny pod ścieżką `/generate`. Odpowiedni plik zostanie utworzony w strukturze projektu jako `src/pages/generate.astro`.
 
@@ -30,7 +32,8 @@ Główna logika widoku zostanie zamknięta w jednym, nadrzędnym komponencie Rea
 - **Główne elementy**: Renderuje warunkowo `GenerationForm`, `Spinner`, `CandidateReviewList` oraz `EditCandidateModal` w zależności od aktualnego stanu (`idle`, `loading`, `reviewing`, `saving`, `error`).
 - **Obsługiwane interakcje**:
     - Uruchamia proces generowania fiszek po otrzymaniu zdarzenia z `GenerationForm`.
-    - Odbiera zdarzenia od komponentów podrzędnych w celu akceptacji (pojedynczej/masowej) lub odrzucenia kandydatów.
+    - Odbiera zdarzenia od komponentów podrzędnych w celu akceptacji (pojedynczej) lub odrzucenia kandydatów.
+    - Obsługuje kliknięcie przycisku "Save all" poprzez wyświetlenie informacji dla użytkownika.
 - **Typy**: `FlashcardCandidateVM`, `GenerationState` (`'idle' | 'loading' | 'reviewing' | 'saving' | 'error'`).
 - **Propsy**: Brak.
 
@@ -50,7 +53,7 @@ Główna logika widoku zostanie zamknięta w jednym, nadrzędnym komponencie Rea
 - **Opis komponentu**: Kontener wyświetlający listę wygenerowanych kandydatów (`CandidateCard`) oraz przycisk do masowej akceptacji.
 - **Główne elementy**: `shadcn/ui/Button` dla "Accept all", lista komponentów `CandidateCard`.
 - **Obsługiwane interakcje**:
-    - Kliknięcie "Accept all" emituje zdarzenie `onAcceptAll`.
+    - Kliknięcie "Accept all" emituje zdarzenie `onAcceptAll`, które w MVP wyświetli tylko toast.
     - Przekazuje zdarzenia `onDelete` i `onEdit` z poszczególnych `CandidateCard` do komponentu nadrzędnego.
 - **Typy**: `FlashcardCandidateVM[]`.
 - **Propsy**:
@@ -122,18 +125,6 @@ Do implementacji widoku wymagane będą następujące typy, w tym dedykowany Vie
   }
   ```
 
-- **`BulkCreateFlashcardsApiPayload`** (ciało żądania `POST /api/flashcards/bulk`)
-  ```typescript
-  interface BulkCreateFlashcardsApiPayload {
-    generation_id: number;
-    flashcards: {
-      front: string;
-      back: string;
-      source: 'ai_generated' | 'ai_generated_edited';
-    }[];
-  }
-  ```
-
 ## 6. Zarządzanie stanem
 Złożoność stanu (cykl życia, dane tymczasowe, stan ładowania, błędy) będzie zarządzana za pomocą customowego hooka `useFlashcardGenerator`.
 
@@ -148,7 +139,7 @@ function useFlashcardGenerator() {
   // Akcje:
   // - generateCandidates(sourceText: string)
   // - acceptSingleCandidate(editedCandidate: FlashcardCandidateVM, originalCandidate: FlashcardCandidateVM)
-  // - acceptAllCandidates()
+  // - showAcceptAllToast() // Zamiast acceptAllCandidates()
   // - rejectCandidate(candidateId: string)
   // - openEditModal(candidate: FlashcardCandidateVM)
   // - closeEditModal()
@@ -175,10 +166,7 @@ Komponent `FlashcardsGeneratorView` (za pośrednictwem hooka `useFlashcardGenera
 
 3.  **Masowy zapis fiszek**:
     - **Endpoint**: `POST /api/flashcards/bulk`
-    - **Żądanie**: `BulkCreateFlashcardsApiPayload`
-    - **Odpowiedź (sukces)**: `{ data: BulkCreateFlashcardsResponseDto }`
-    - **Akcja**: Po zapisaniu, lokalna lista `candidates` jest czyszczona.
-    Masowy zapis fiszek nie jest obsługiwany na poziomie MVP - zostanie wdroony na późniejszych etapach. Na ten moment, po kliknięciu buttonu 'Save all' ma wyświetlić się toast z informacją, i ta funkcjonalność nie zostałą jeszcze zaimplementowana.
+    - **Status**: **Nieimplementowane w MVP**. Wywołanie tego endpointu nie będzie zaimplementowane po stronie frontendu.
 
 ## 8. Interakcje użytkownika
 - **Wpisywanie tekstu w `GenerationForm`**: Licznik znaków jest aktualizowany, a przycisk "Generate" jest włączany/wyłączany na podstawie walidacji.
@@ -187,7 +175,7 @@ Komponent `FlashcardsGeneratorView` (za pośrednictwem hooka `useFlashcardGenera
 - **Kliknięcie na `CandidateCard`**: Otwiera się `EditCandidateModal` z danymi tej karty.
 - **Kliknięcie "Save and accept" w modalu**: Wywoływane jest API zapisu, kandydat znika z listy, a modal się zamyka. Wyświetlany jest toast z potwierdzeniem.
 - **Kliknięcie "Reject" w modalu**: Kandydat znika z listy, a modal się zamyka.
-- **Kliknięcie "Accept all"**: Wywoływane jest API do masowego zapisu, a lista kandydatów jest czyszczona. Wyświetlany jest toast.
+- **Kliknięcie "Accept all"**: Wyświetlany jest toast z informacją: "Funkcjonalność masowego zapisu zostanie wdrożona w przyszłości". Lista kandydatów pozostaje bez zmian.
 
 ## 9. Warunki i walidacja
 Walidacja będzie realizowana na poziomie komponentów, aby zapobiec niepotrzebnym wywołaniom API, zgodnie ze schematami Zod zaimplementowanymi na backendzie.
@@ -203,16 +191,17 @@ Walidacja będzie realizowana na poziomie komponentów, aby zapobiec niepotrzebn
 
 ## 10. Obsługa błędów
 - **Błąd generowania (`POST /api/generations`)**: Stan aplikacji zmienia się na `error`. Wyświetlany jest komunikat błędu (np. "Przekroczono limit zapytań") i przycisk "Spróbuj ponownie", który resetuje stan do `idle`.
-- **Błąd zapisu (pojedynczego lub masowego)**: Stan aplikacji wraca do `reviewing`. Wyświetlany jest nietrwały komunikat (toast), np. "Zapis nie powiódł się. Spróbuj ponownie". Stan listy kandydatów pozostaje niezmieniony, umożliwiając ponowną próbę.
+- **Błąd zapisu (pojedynczego)**: Stan aplikacji wraca do `reviewing`. Wyświetlany jest nietrwały komunikat (toast), np. "Zapis nie powiódł się. Spróbuj ponownie". Stan listy kandydatów pozostaje niezmieniony, umożliwiając ponowną próbę.
 
 ## 11. Kroki implementacji
 1.  **Stworzenie pliku strony**: Utworzenie pliku `src/pages/generate.astro`.
 2.  **Implementacja komponentu `FlashcardsGeneratorView`**: Stworzenie głównego komponentu React, który będzie renderowany w pliku `.astro` z dyrektywą `client:load`.
-3.  **Implementacja hooka `useFlashcardGenerator`**: Zdefiniowanie logiki zarządzania stanem, w tym zmiennych stanu i pustych funkcji-akcji.
-4.  **Budowa komponentów UI**: Stworzenie komponentów `GenerationForm`, `CandidateReviewList`, `CandidateCard` i `EditCandidateModal` z użyciem `shadcn/ui`, przekazując do nich wymagane propsy i funkcje zwrotne.
-5.  **Walidacja po stronie klienta**: Dodanie logiki walidacji do `GenerationForm` i `EditCandidateModal` zgodnie z wymaganiami.
-6.  **Integracja z API**: Zaimplementowanie logiki wywołań `fetch` wewnątrz akcji hooka `useFlashcardGenerator` dla wszystkich trzech endpointów (`/generations`, `/flashcards`, `/flashcards/bulk`).
-7.  **Połączenie logiki**: Połączenie interakcji użytkownika w komponentach z akcjami w hooku (np. `onSubmit` w `GenerationForm` wywołuje `generateCandidates`).
-8.  **Obsługa stanu ładowania i błędów**: Implementacja warunkowego renderowania komponentu `Spinner` i komunikatów o błędach na podstawie zmiennej `state` z hooka. Dodanie obsługi toastów dla operacji zapisu.
-9.  **Stylowanie i dopracowanie UX**: Dopracowanie wyglądu za pomocą TailwindCSS, zapewnienie płynnych przejść i responsywności.
-10. **Testowanie manualne**: Przetestowanie wszystkich historyjek użytkownika (US-001 do US-005) w celu zapewnienia poprawnego działania.
+3.  **Implementacja hooka `useFlashcardGenerator`**: Zdefiniowanie logiki zarządzania stanem, w tym zmiennych stanu i funkcji-akcji (z pominięciem logiki masowego zapisu).
+4.  **Budowa komponentów UI**: Stworzenie komponentów `GenerationForm`, `CandidateReviewList`, `CandidateCard` i `EditCandidateModal` z użyciem `shadcn/ui`.
+5.  **Podpięcie akcji "Save All"**: Podłączenie przycisku "Save All" do funkcji w hooku, która wyświetli toast z informacją o braku implementacji.
+6.  **Walidacja po stronie klienta**: Dodanie logiki walidacji do `GenerationForm` i `EditCandidateModal`.
+7.  **Integracja z API (Generowanie i Zapis Pojedynczy)**: Zaimplementowanie logiki wywołań `fetch` dla endpointów `/generations` i `/flashcards`.
+8.  **Połączenie logiki**: Połączenie interakcji użytkownika w komponentach z akcjami w hooku.
+9.  **Obsługa stanu ładowania i błędów**: Implementacja warunkowego renderowania `Spinner` i komunikatów o błędach. Dodanie obsługi toastów dla operacji zapisu i informacji.
+10. **Stylowanie i dopracowanie UX**: Dopracowanie wyglądu za pomocą TailwindCSS.
+11. **Testowanie manualne**: Przetestowanie wszystkich zaimplementowanych historyjek użytkownika.
