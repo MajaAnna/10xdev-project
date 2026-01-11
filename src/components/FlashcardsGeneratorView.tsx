@@ -1,4 +1,12 @@
-import { useFlashcardGenerator } from "./hooks/useFlashcardGenerator";
+"use client";
+
+import { Toaster, toast } from "sonner";
+import { GenerationForm } from "./GenerationForm";
+import { CandidateReviewList } from "./CandidateReviewList";
+import { EditCandidateModal } from "./EditCandidateModal";
+import { Spinner } from "./ui/spinner";
+import { Button } from "./ui/button";
+import { useFlashcardGenerator, type FlashcardCandidateVM } from "./hooks/useFlashcardGenerator";
 
 export default function FlashcardsGeneratorView() {
   const {
@@ -8,51 +16,73 @@ export default function FlashcardsGeneratorView() {
     candidateToEdit,
     generateCandidates,
     acceptSingleCandidate,
-    showAcceptAllToast,
     rejectCandidate,
     openEditModal,
     closeEditModal,
+    reset,
   } = useFlashcardGenerator();
 
-  return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Flashcards Generator</h1>
+  const showAcceptAllToast = () => {
+    toast.info("Bulk save functionality will be implemented in the future.");
+  };
 
-      {state === "idle" && (
-        <div>
-          {/* GenerationForm will be here */}
-          <p>State: idle. GenerationForm will be here.</p>
-        </div>
-      )}
+  const handleSaveAndAccept = async (editedCandidate: FlashcardCandidateVM) => {
+    // The hook now handles optimistic updates and rollbacks
+    await acceptSingleCandidate(editedCandidate, candidateToEdit);
+    if (error) {
+      toast.error(error);
+    } else {
+      toast.success("Flashcard accepted and saved!");
+    }
+  };
+
+  const handleReject = (candidateId: string) => {
+    rejectCandidate(candidateId);
+    toast.error("Candidate rejected.");
+  };
+
+  return (
+    <div className="container mx-auto py-8 px-4 max-w-4xl">
+      <Toaster richColors />
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-bold tracking-tight">Flashcards Generator</h1>
+        <p className="text-muted-foreground mt-2">Let AI create flashcards from your notes in seconds.</p>
+      </div>
+
+      {state === "idle" && <GenerationForm isLoading={false} onSubmit={generateCandidates} />}
 
       {state === "loading" && (
-        <div>
-          {/* Spinner will be here */}
-          <p>State: loading. Spinner will be here.</p>
+        <div className="flex flex-col items-center justify-center gap-4 py-16">
+          <Spinner size="lg" />
+          <p className="text-muted-foreground">Generating candidates...</p>
         </div>
       )}
 
       {state === "reviewing" && (
-        <div>
-          {/* CandidateReviewList will be here */}
-          <p>State: reviewing. CandidateReviewList will be here.</p>
-          <pre>{JSON.stringify(candidates, null, 2)}</pre>
-        </div>
+        <CandidateReviewList
+          candidates={candidates}
+          generationId={null} // generationId is not used in MVP for this component
+          onAcceptAll={showAcceptAllToast}
+          onOpenEditModal={openEditModal}
+          onDeleteCandidate={handleReject}
+        />
       )}
 
       {state === "error" && (
-        <div>
-          <p>State: error.</p>
-          <p>{error}</p>
+        <div className="text-center py-12 text-red-500">
+          <h2 className="text-xl font-semibold">An Error Occurred</h2>
+          <p className="mt-2 mb-4">{error}</p>
+          <Button onClick={reset}>Try Again</Button>
         </div>
       )}
 
-      {candidateToEdit && (
-        <div>
-          {/* EditCandidateModal will be here */}
-          <p>Editing candidate: {candidateToEdit.id}</p>
-        </div>
-      )}
+      <EditCandidateModal
+        isOpen={!!candidateToEdit}
+        candidate={candidateToEdit}
+        onSave={handleSaveAndAccept}
+        onReject={handleReject}
+        onCancel={closeEditModal}
+      />
     </div>
   );
 }
