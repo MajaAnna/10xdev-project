@@ -27,6 +27,10 @@ export default function FlashcardsGeneratorView() {
   };
 
   const handleSaveAndAccept = async (editedCandidate: FlashcardCandidateVM) => {
+    if (!candidateToEdit) {
+      toast.error("Failed to save: no candidate was being edited.");
+      return;
+    }
     // The hook now handles optimistic updates and rollbacks
     await acceptSingleCandidate(editedCandidate, candidateToEdit);
     if (error) {

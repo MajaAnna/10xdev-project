@@ -39,8 +39,12 @@ export function useFlashcardGenerator() {
       setCandidates(data.candidates.map((c) => ({ ...c, id: crypto.randomUUID() })));
       setGenerationId(data.generation_id);
       setState("reviewing");
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError("An unknown error occurred during generation.");
+      }
       setState("error");
     }
   };
@@ -83,14 +87,20 @@ export function useFlashcardGenerator() {
         throw new Error(errorData.error.message || "Failed to save the flashcard.");
       }
       // On success, the candidate is already removed.
-    } catch (e: any) {
-      setError(e.message);
-      console.error(e.message);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setError(e.message);
+        console.error(e.message);
+      } else {
+        setError("An unknown error occurred during flashcard saving.");
+        console.error("An unknown error occurred:", e);
+      }
       // Rollback on failure
       if (editedCandidateIndex.current !== null) {
+        const rollbackIndex = editedCandidateIndex.current;
         setCandidates((prev) => {
           const newCandidates = [...prev];
-          newCandidates.splice(editedCandidateIndex.current!, 0, originalCandidate);
+          newCandidates.splice(rollbackIndex, 0, originalCandidate);
           return newCandidates;
         });
       }
