@@ -3,12 +3,7 @@ import type { APIContext, APIRoute } from "astro";
 import { deleteFlashcard, updateFlashcard } from "../../../lib/services/flashcard.service";
 import { NotFoundError } from "../../../lib/errors/common.errors"; // UnauthorizedError is removed
 import { UpdateFlashcardSchema } from "../../../lib/schemas/flashcard.schemas";
-import type {
-  ApiResponseDto,
-  DeleteFlashcardResponseDto,
-  ErrorResponseDto,
-  FlashcardDto,
-} from "../../../types";
+import type { ApiResponseDto, DeleteFlashcardResponseDto, ErrorResponseDto, FlashcardDto } from "../../../types";
 import { DEFAULT_USER_ID } from "../../../db/supabase.client"; // Import DEFAULT_USER_ID
 
 export const prerender = false;
@@ -76,13 +71,10 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       updated_at: updatedFlashcard.updated_at,
     };
 
-    return new Response(
-      JSON.stringify({ data: flashcardDto } as ApiResponseDto<FlashcardDto>),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    return new Response(JSON.stringify({ data: flashcardDto } as ApiResponseDto<FlashcardDto>), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     const headers = { "Content-Type": "application/json" };
     if (error instanceof z.ZodError) {

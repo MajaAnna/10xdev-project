@@ -135,3 +135,25 @@ export const UpdateFlashcardSchema = z
  * Use this type for validated data in service layer
  */
 export type UpdateFlashcardDto = z.infer<typeof UpdateFlashcardSchema>;
+
+/**
+ * Schema for the manual flashcard creation form (client-side)
+ *
+ * This schema is simpler than `createFlashcardSchema` as it only deals
+ * with the fields the user directly inputs in the manual creation modal.
+ * The `source` and `generation_id` are handled by the application logic.
+ */
+export const manualCardFormSchema = z.object({
+  front: z
+    .string()
+    .trim()
+    .min(1, { message: "Front is required." })
+    .max(200, { message: "Front must not exceed 200 characters." }),
+  back: z
+    .string()
+    .trim()
+    .min(1, { message: "Back is required." })
+    .max(500, { message: "Back must not exceed 500 characters." }),
+});
+
+export type ManualCardFormValues = z.infer<typeof manualCardFormSchema>;
