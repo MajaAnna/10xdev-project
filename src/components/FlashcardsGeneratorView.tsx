@@ -40,6 +40,15 @@ export default function FlashcardsGeneratorView() {
     }
   };
 
+  const handleAcceptCandidate = async (candidate: FlashcardCandidateVM) => {
+    await acceptSingleCandidate(candidate, candidate);
+    if (error) {
+      toast.error(error);
+    } else {
+      toast.success("Flashcard accepted and saved!");
+    }
+  };
+
   const handleReject = (candidateId: string) => {
     rejectCandidate(candidateId);
     toast.error("Candidate rejected.");
@@ -69,6 +78,7 @@ export default function FlashcardsGeneratorView() {
           onAcceptAll={showAcceptAllToast}
           onOpenEditModal={openEditModal}
           onDeleteCandidate={handleReject}
+          onAcceptCandidate={handleAcceptCandidate} // Pass the new handler
         />
       )}
 
