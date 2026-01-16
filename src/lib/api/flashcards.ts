@@ -37,7 +37,8 @@ export async function createFlashcard(data: CreateFlashcardCommand): Promise<Fla
     throw new Error(errorData.error?.message ?? "Failed to create flashcard");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return responseData.data;
 }
 
 export async function updateFlashcard(id: number, data: UpdateFlashcardCommand): Promise<FlashcardDto> {
@@ -54,7 +55,8 @@ export async function updateFlashcard(id: number, data: UpdateFlashcardCommand):
     throw new Error(errorData.error?.message ?? "Failed to update flashcard");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return responseData.data;
 }
 
 export async function deleteFlashcard(id: number): Promise<DeleteFlashcardResponseDto> {
@@ -67,5 +69,6 @@ export async function deleteFlashcard(id: number): Promise<DeleteFlashcardRespon
     throw new Error(errorData.error?.message ?? "Failed to delete flashcard");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return responseData.data;
 }
