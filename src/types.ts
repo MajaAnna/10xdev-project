@@ -346,3 +346,15 @@ export const isAiGeneratedSource = (
 export const isManualSource = (source: FlashcardSource): source is Extract<FlashcardSource, "manual"> => {
   return source === "manual";
 };
+
+// ============================================================================
+// View Models
+// ============================================================================
+
+/**
+ * View Model: User profile data for display
+ */
+export interface UserProfileViewModel {
+  email: string;
+  joinDate: string;
+}
