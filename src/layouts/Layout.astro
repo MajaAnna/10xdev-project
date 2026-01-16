@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import TopNav from "../components/TopNav.tsx";
+import { Toaster } from "@/components/ui/sonner";
 
 interface Props {
   title?: string;
@@ -23,6 +24,7 @@ const { title = "AI Cards" } = Astro.props;
     <div class="flex flex-col min-h-[calc(100vh-3.5rem)]">
       <slot />
     </div>
+    <Toaster client:load />
   </body>
 </html>
 

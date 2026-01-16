@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import UserProfileDisplay from "./UserProfileDisplay";
 import SignOutButton from "./SignOutButton";
-import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 
 const UserProfileView: React.FC = () => {
@@ -81,7 +80,6 @@ const UserProfileView: React.FC = () => {
         </CardHeader>
         <CardContent>
           <p className="text-red-500">{error}</p>
-          <Toaster />
         </CardContent>
       </Card>
     );
@@ -95,7 +93,6 @@ const UserProfileView: React.FC = () => {
         </CardHeader>
         <CardContent>
           <p>Nie udało się załadować danych profilu użytkownika.</p>
-          <Toaster />
         </CardContent>
       </Card>
     );
@@ -110,7 +107,6 @@ const UserProfileView: React.FC = () => {
         <UserProfileDisplay userProfile={userProfile} />
         <SignOutButton onSignOut={handleSignOut} isLoading={isLoading} />
       </CardContent>
-      <Toaster />
     </Card>
   );
 };
