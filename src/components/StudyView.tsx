@@ -2,70 +2,21 @@
 
 import React from "react";
 import { useStudySession } from "@/components/hooks/useStudySession";
-import type { FlashcardDto } from "@/types";
-import { Button } from "@/components/ui/button";
-
-// Placeholder components - will be implemented in the next steps
-const Spinner = () => <div>Loading...</div>;
-const Alert = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-md border border-red-400 bg-red-50 p-4 text-red-700">{children}</div>
-);
-const SessionEndMessage = ({ onRestart }: { onRestart: () => void }) => (
-  <div className="flex flex-col items-center gap-4">
-    <h2 className="text-2xl font-bold">Session Complete!</h2>
-    <p>You have reviewed all the cards.</p>
-    <div className="flex gap-4">
-      <Button onClick={onRestart}>Restart Session</Button>
-      <Button variant="outline" asChild>
-        <a href="/generate">Return to Generator</a>
-      </Button>
-    </div>
-  </div>
-);
-const StudyProgressBar = ({ current, total }: { current: number; total: number }) => (
-  <div className="w-full text-center text-sm text-muted-foreground">
-    Card {current} / {total}
-  </div>
-);
-const FlashcardViewer = ({ card, isAnswerVisible }: { card: FlashcardDto; isAnswerVisible: boolean }) => (
-  <div className="min-h-64 w-full rounded-lg border bg-card p-8 text-center text-card-foreground shadow-sm">
-    <h3 className="text-xl font-semibold">{card.front}</h3>
-    {isAnswerVisible && (
-      <div className="mt-4 border-t pt-4">
-        <p>{card.back}</p>
-      </div>
-    )}
-  </div>
-);
-const StudyControls = ({
-  onShowAnswer,
-  onEvaluate,
-  isAnswerVisible,
-}: {
-  onShowAnswer: () => void;
-  onEvaluate: (knew: boolean) => void;
-  isAnswerVisible: boolean;
-}) => (
-  <div className="flex w-full justify-center gap-4">
-    {!isAnswerVisible ? (
-      <Button onClick={onShowAnswer} className="w-48">
-        Show Answer
-      </Button>
-    ) : (
-      <>
-        <Button variant="outline" className="w-48" onClick={() => onEvaluate(false)}>
-          Don&apos;t Know
-        </Button>
-        <Button className="w-48" onClick={() => onEvaluate(true)}>
-          Know
-        </Button>
-      </>
-    )}
-  </div>
-);
+// Import actual components
+import { SessionEndMessage } from "@/components/SessionEndMessage";
+import { StudyProgressBar } from "@/components/StudyProgressBar";
+import { FlashcardViewer } from "@/components/FlashcardViewer";
+import { StudyControls } from "@/components/StudyControls";
+import { Spinner } from "@/components/ui/spinner"; // Assuming a Spinner component in ui
+import { Alert } from "@/components/ui/alert"; // Assuming an Alert component in ui
 
 const StudyView = () => {
   const { status, error, currentCard, isAnswerVisible, progress, actions } = useStudySession();
+
+  // Helper for navigation
+  const goToGenerator = () => {
+    window.location.href = "/generate";
+  };
 
   if (status === "loading") {
     return <Spinner />;
@@ -87,7 +38,7 @@ const StudyView = () => {
   }
 
   if (status === "finished") {
-    return <SessionEndMessage onRestart={actions.restartSession} />;
+    return <SessionEndMessage onRestart={actions.restartSession} onGoToGenerator={goToGenerator} />;
   }
 
   if (status === "ready" && currentCard) {
