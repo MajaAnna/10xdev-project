@@ -1,22 +1,15 @@
 import { z } from "zod";
 
-/**
- * Zod schema for validating flashcard generation requests
- *
- * Validates:
- * - source_text: Must be between 100 and 10,000 characters after trimming
- * - model: Optional AI model name, defaults to "gpt-4"
- */
-export const generateFlashcardsSchema = z.object({
-  source_text: z
-    .string()
-    .min(100, "Source text must be at least 100 characters")
-    .max(10000, "Source text must not exceed 10,000 characters")
-    .transform((val) => val.trim())
-    .refine((val) => val.length >= 100, {
-      message: "Source text must contain at least 100 non-whitespace characters",
-    }),
-  model: z.string().optional().default("gpt-4"),
+export const flashcardGenerationSchema = z.object({
+  front: z.string().min(1, "Pole 'front' nie może być puste."),
+  back: z.string().min(1, "Pole 'back' nie może być puste."),
 });
 
-export type GenerateFlashcardsInput = z.infer<typeof generateFlashcardsSchema>;
+export const generationResponseSchema = z.object({
+  flashcards: z.array(flashcardGenerationSchema),
+});
+
+export const generationRequestSchema = z.object({
+  text: z.string().min(1, "Tekst do wygenerowania fiszek nie może być pusty."),
+  model: z.string().min(1).optional(),
+});

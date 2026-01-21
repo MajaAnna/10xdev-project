@@ -358,3 +358,42 @@ export interface UserProfileViewModel {
   email: string;
   joinDate: string;
 }
+
+// ============================================================================
+// OpenRouter Service Types
+// ============================================================================
+
+export interface OpenRouterMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+export interface OpenRouterRequest {
+  model: string;
+  messages: OpenRouterMessage[];
+  response_format?: {
+    type: "json_schema";
+    json_schema: {
+      name: string;
+      strict?: boolean;
+      schema: object;
+    };
+  };
+  temperature?: number;
+  max_tokens?: number;
+  top_p?: number;
+}
+
+export interface OpenRouterResponse {
+  id: string;
+  choices: [
+    {
+      message: {
+        role: "assistant";
+        content: string;
+      };
+      finish_reason: string;
+    },
+  ];
+  // ... other fields from the response
+}
