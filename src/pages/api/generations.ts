@@ -1,159 +1,102 @@
 import type { APIRoute } from "astro";
-import type { GenerateFlashcardsCommand, GenerationResponseDto, ApiResponseDto, ErrorResponseDto } from "../../types";
-import { generateFlashcardsSchema } from "../../lib/schemas/generation.schemas";
-import { generateFlashcards } from "../../lib/services/generation.service";
-import { RateLimitError, ServiceUnavailableError, GenerationFailedError } from "../../lib/errors/generation.errors";
-import { ZodError } from "zod";
-import { DEFAULT_USER_ID } from "../../db/supabase.client";
+import { OpenRouterService } from "../../lib/services/openrouter.service";
+import { generationRequestSchema } from "../../lib/schemas/generation.schemas";
+import type { OpenRouterRequest } from "../../types";
 
-export const prerender = false;
-
-/**
- * POST /api/generations
- *
- * Generates flashcard candidates from source text using AI (OpenRouter API)
- *
- * Request Body:
- * - source_text: string (100-10,000 characters)
- * - model?: string (optional, defaults to "gpt-4")
- *
- * Success Response (201):
- * - generation_id: number
- * - model: string
- * - generation_duration: number (in milliseconds)
- * - generated_count: number
- * - candidates: FlashcardCandidateDto[]
- *
- * Error Responses:
- * - 400: Validation error (invalid input)
- * - 429: Rate limit exceeded
- * - 500: Generation failed
- * - 503: AI service unavailable
- */
-export const POST: APIRoute = async ({ request, locals }) => {
-  try {
-    // Use default user ID (auth will be implemented later)
-    const userId = DEFAULT_USER_ID;
-
-    console.log(request);
-
-    // Parse request body
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Invalid request body format",
-            details: { parse_error: "Expected JSON object" },
+// This schema defines the expected JSON structure for generated flashcards.
+// It is explicitly defined here for the API endpoint context.
+const flashcardsSchema = {
+  name: "generate_flashcards_from_text",
+  strict: true,
+  schema: {
+    type: "object",
+    properties: {
+      flashcards: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            front: { type: "string" },
+            back: { type: "string" },
           },
-        } satisfies ErrorResponseDto),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+          required: ["front", "back"],
+        },
+      },
+    },
+    required: ["flashcards"],
+  },
+};
+
+export const POST: APIRoute = async ({ request }) => {
+  try {
+    const body = await request.json();
+    const validation = generationRequestSchema.safeParse(body);
+
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: "Nieprawidłowe dane wejściowe.", details: validation.error.flatten() }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
       );
     }
 
-    // Validate request body with Zod
-    let validatedData: GenerateFlashcardsCommand;
-    try {
-      validatedData = generateFlashcardsSchema.parse(body);
-      console.log(validatedData);
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const firstError = error.errors[0];
-        return new Response(
-          JSON.stringify({
-            error: {
-              code: "VALIDATION_ERROR",
-              message: firstError.message,
-              details: {
-                field: firstError.path.join("."),
-                min_length: 100,
-                max_length: 10000,
-              },
-            },
-          } satisfies ErrorResponseDto),
-          { status: 400, headers: { "Content-Type": "application/json" } }
-        );
-      }
-      throw error;
-    }
+    const { text, model } = validation.data;
+    const openRouterService = new OpenRouterService();
 
-    // Generate flashcards with service
-    const result = await generateFlashcards(locals.supabase, {
-      source_text: validatedData.source_text,
-      model: validatedData.model || "gpt-4",
-      user_id: userId,
-    });
-
-    console.log(result);
-
-    // Return success response
-    const responseData: GenerationResponseDto = {
-      generation_id: result.generation_id,
-      model: result.model,
-      generation_duration: result.generation_duration,
-      generated_count: result.generated_count,
-      candidates: result.candidates,
+    const openRouterRequest: OpenRouterRequest = {
+      model: model || "openai/gpt-4o", // Use model from request or a default
+      messages: [
+        {
+          role: "system",
+          content:
+            "Jesteś asystentem, który tworzy fiszki na podstawie dostarczonego tekstu. Zawsze odpowiadaj w formacie JSON zgodnym z podanym schematem. Upewnij się, że generujesz co najmniej 3 fiszki, a każda fiszka dotyczy istotnych informacji z tekstu.",
+        },
+        {
+          role: "user",
+          content: text,
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: flashcardsSchema,
+      },
+      temperature: 0.2, // Lower temperature for more deterministic and factual responses
     };
 
-    console.log(responseData);
+    const response = await openRouterService.getChatCompletion(openRouterRequest);
 
-    return new Response(JSON.stringify({ data: responseData } satisfies ApiResponseDto<GenerationResponseDto>), {
-      status: 201,
+    // Assuming the AI's response content is directly the JSON string we need
+    const generatedContent = response.choices[0]?.message?.content;
+
+    if (!generatedContent) {
+      throw new Error("AI did not return any content.");
+    }
+
+    // Attempt to parse the content to ensure it's valid JSON before returning
+    const parsedGeneratedContent = JSON.parse(generatedContent);
+
+    return new Response(JSON.stringify(parsedGeneratedContent), {
+      status: 200,
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    // Handle rate limit errors
-    if (error instanceof RateLimitError) {
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "RATE_LIMIT_EXCEEDED",
-            message: error.message,
-          },
-        } satisfies ErrorResponseDto),
-        { status: 429, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Handle service unavailable errors
-    if (error instanceof ServiceUnavailableError) {
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "SERVICE_UNAVAILABLE",
-            message: error.message,
-          },
-        } satisfies ErrorResponseDto),
-        { status: 503, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Handle generation failed errors
-    if (error instanceof GenerationFailedError) {
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "GENERATION_FAILED",
-            message: error.message,
-          },
-        } satisfies ErrorResponseDto),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Handle unexpected errors
-    console.error("Unexpected error in POST /api/generations:", error);
+    console.error("[API/Generations] Error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Wystąpił nieznany błąd.";
     return new Response(
       JSON.stringify({
-        error: {
-          code: "GENERATION_FAILED",
-          message: "An unexpected error occurred while generating flashcards:( Please try again later.",
-        },
-      } satisfies ErrorResponseDto),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+        error: "Wystąpił wewnętrzny błąd serwera.",
+        details: errorMessage,
+        stack:
+          import.meta.env.NODE_ENV === "development" ? (error instanceof Error ? error.stack : undefined) : undefined, // Provide stack in development
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
     );
   }
 };
+
+export const prerender = false;
