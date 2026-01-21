@@ -31,14 +31,16 @@ export class OpenRouterService {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
+          "HTTP-Referer": "http://localhost:4321", // Required for some free models, even if optional in docs
+          "X-Title": "AI Cards", // Required for some free models, even if optional in docs
           "Content-Type": "application/json",
         },
         body: JSON.stringify(request),
       });
 
       if (!response.ok) {
-        // Try to parse the error, but don't fail if the body is not valid JSON
         const errorData = await response.json().catch(() => ({}));
+        console.error("[OpenRouterService] API Error Details:", errorData); // Added for debugging
         const errorMessage = errorData?.error?.message || response.statusText;
         throw new Error(`OpenRouter API Error: ${response.status} ${errorMessage}`);
       }

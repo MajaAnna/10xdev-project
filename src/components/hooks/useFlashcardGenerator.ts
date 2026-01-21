@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import type { GenerationResponseDto, CreateFlashcardCommand, ApiResponseDto } from "@/types";
+import type { GenerationResponseDto, CreateFlashcardCommand } from "@/types";
 
 export interface FlashcardCandidateVM {
   id: string; // Client-side unique ID
@@ -26,7 +26,7 @@ export function useFlashcardGenerator() {
       const response = await fetch("/api/generations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source_text: sourceText }),
+        body: JSON.stringify({ text: sourceText }),
       });
 
       if (!response.ok) {
@@ -34,10 +34,11 @@ export function useFlashcardGenerator() {
         throw new Error(errorData.error.message || "Failed to generate candidates.");
       }
 
-      const data: ApiResponseDto<GenerationResponseDto> = await response.json();
+      const data: GenerationResponseDto = await response.json();
+      console.log("[useFlashcardGenerator] Received data from API:", data);
 
-      setCandidates(data.data.candidates.map((c) => ({ ...c, id: crypto.randomUUID() })));
-      setGenerationId(data.data.generation_id);
+      setCandidates(data.candidates.map((c) => ({ ...c, id: crypto.randomUUID() })));
+      setGenerationId(data.generation_id);
       setState("reviewing");
     } catch (e: unknown) {
       if (e instanceof Error) {

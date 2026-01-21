@@ -1,33 +1,11 @@
 import type { APIRoute } from "astro";
-import { OpenRouterService } from "../../lib/services/openrouter.service";
 import { generationRequestSchema } from "../../lib/schemas/generation.schemas";
-import type { OpenRouterRequest } from "../../types";
+import type { GenerationResponseDto } from "../../types"; // Removed OpenRouterRequest
+import { generateFlashcards } from "../../lib/services/generation.service";
+import { DEFAULT_USER_ID } from "../../db/supabase.client";
 
-// This schema defines the expected JSON structure for generated flashcards.
-// It is explicitly defined here for the API endpoint context.
-const flashcardsSchema = {
-  name: "generate_flashcards_from_text",
-  strict: true,
-  schema: {
-    type: "object",
-    properties: {
-      flashcards: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            front: { type: "string" },
-            back: { type: "string" },
-          },
-          required: ["front", "back"],
-        },
-      },
-    },
-    required: ["flashcards"],
-  },
-};
-
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
+  // Added locals
   try {
     const body = await request.json();
     const validation = generationRequestSchema.safeParse(body);
@@ -43,41 +21,24 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const { text, model } = validation.data;
-    const openRouterService = new OpenRouterService();
+    const userId = DEFAULT_USER_ID;
 
-    const openRouterRequest: OpenRouterRequest = {
-      model: model || "openai/gpt-4o", // Use model from request or a default
-      messages: [
-        {
-          role: "system",
-          content:
-            "Jesteś asystentem, który tworzy fiszki na podstawie dostarczonego tekstu. Zawsze odpowiadaj w formacie JSON zgodnym z podanym schematem. Upewnij się, że generujesz co najmniej 3 fiszki, a każda fiszka dotyczy istotnych informacji z tekstu.",
-        },
-        {
-          role: "user",
-          content: text,
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: flashcardsSchema,
-      },
-      temperature: 0.2, // Lower temperature for more deterministic and factual responses
+    const result = await generateFlashcards(locals.supabase, {
+      // Pass locals.supabase
+      source_text: text,
+      model: model || "google/gemma-3n-e2b-it:free",
+      user_id: userId,
+    });
+
+    const generationResponse: GenerationResponseDto = {
+      generation_id: result.generation_id,
+      model: result.model,
+      generation_duration: result.generation_duration,
+      generated_count: result.generated_count,
+      candidates: result.candidates,
     };
 
-    const response = await openRouterService.getChatCompletion(openRouterRequest);
-
-    // Assuming the AI's response content is directly the JSON string we need
-    const generatedContent = response.choices[0]?.message?.content;
-
-    if (!generatedContent) {
-      throw new Error("AI did not return any content.");
-    }
-
-    // Attempt to parse the content to ensure it's valid JSON before returning
-    const parsedGeneratedContent = JSON.parse(generatedContent);
-
-    return new Response(JSON.stringify(parsedGeneratedContent), {
+    return new Response(JSON.stringify(generationResponse), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });

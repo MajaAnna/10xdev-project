@@ -65,19 +65,12 @@ interface GenerateFlashcardsResult {
 }
 
 /**
- * Creates system prompt for AI flashcard generation
+ * Creates system prompt for AI flashcard generation (or returns user prompt if system role not supported)
  */
-function createSystemPrompt(): string {
-  return `You are a flashcard generator. Generate flashcards from the provided text.
-Return ONLY a JSON array of flashcard objects with "front" and "back" fields.
-Each flashcard should test understanding of key concepts.
-Generate between 3 and 10 flashcards depending on the content length and complexity.
-
-Example output format:
-[
-  {"front": "What is X?", "back": "X is..."},
-  {"front": "How does Y work?", "back": "Y works by..."}
-]`;
+function createUserPromptContent(sourceText: string): string {
+  // Since 'system' role is not supported by models like google/gemma-3n-e2b-it,
+  // we embed the instructions directly into the user message.
+  return `Jesteś asystentem, który tworzy fiszki na podstawie dostarczonego tekstu. Dla każdej fiszki odpowiedź w formacie: "Front: [treść przodu fiszki] | Back: [treść tyłu fiszki]", oddzielając każdą fiszkę nową linią. Tekst do przetworzenia:\n\n${sourceText}`;
 }
 
 /**
@@ -86,7 +79,7 @@ Example output format:
  */
 async function callOpenRouterAPI(sourceText: string, model: string): Promise<FlashcardCandidateDto[]> {
   const apiKey = import.meta.env.OPENROUTER_API_KEY;
-  const useMock = import.meta.env.MOCK_AI_SERVICE === "true" || !apiKey;
+  const useMock = !apiKey; // Mocks are now only used if API key is missing.
 
   // Use mock data for development/testing
   if (useMock) {
@@ -100,12 +93,8 @@ async function callOpenRouterAPI(sourceText: string, model: string): Promise<Fla
     model,
     messages: [
       {
-        role: "system",
-        content: createSystemPrompt(),
-      },
-      {
         role: "user",
-        content: sourceText,
+        content: createUserPromptContent(sourceText),
       },
     ],
   };
@@ -173,6 +162,7 @@ async function callOpenRouterAPI(sourceText: string, model: string): Promise<Fla
 
 /**
  * Parses OpenRouter API response into flashcard candidates array
+ * Expects plain text in format: "Front: [content] | Back: [content]" per line.
  */
 function parseAIResponse(response: OpenRouterResponse): FlashcardCandidateDto[] {
   try {
@@ -182,35 +172,27 @@ function parseAIResponse(response: OpenRouterResponse): FlashcardCandidateDto[] 
 
     const content = response.choices[0].message.content;
 
-    // Try to parse as JSON
-    const candidates = JSON.parse(content);
+    if (!content) {
+      throw new Error("AI response content is empty.");
+    }
 
-    // Validate structure
-    if (!Array.isArray(candidates)) {
-      throw new Error("AI response is not an array");
+    const lines = content.split("\n").filter((line) => line.trim() !== "");
+
+    const candidates: FlashcardCandidateDto[] = [];
+    for (const line of lines) {
+      const match = line.match(/^Front: (.+?) \| Back: (.+)$/);
+      if (match) {
+        candidates.push({ front: match[1].trim(), back: match[2].trim() });
+      } else {
+        console.warn(`Skipping malformed line in AI response: ${line}`);
+      }
     }
 
     if (candidates.length === 0) {
-      throw new Error("AI returned empty candidates array");
+      throw new Error("No flashcards could be parsed from AI response.");
     }
 
-    // Validate each candidate
-    const validatedCandidates: FlashcardCandidateDto[] = candidates.map((candidate, index) => {
-      if (!candidate.front || !candidate.back) {
-        throw new Error(`Candidate at index ${index} missing front or back field`);
-      }
-
-      if (typeof candidate.front !== "string" || typeof candidate.back !== "string") {
-        throw new Error(`Candidate at index ${index} has invalid field types`);
-      }
-
-      return {
-        front: candidate.front.trim(),
-        back: candidate.back.trim(),
-      };
-    });
-
-    return validatedCandidates;
+    return candidates;
   } catch (error) {
     throw new GenerationFailedError("Failed to parse AI response", error);
   }
