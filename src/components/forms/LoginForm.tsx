@@ -11,8 +11,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 
 const LoginSchema = z.object({
-  email: z.string().email("Proszę podać poprawny adres e-mail."),
-  password: z.string().min(1, "Hasło jest wymagane."),
+  email: z.string().email("Please enter a valid email address."),
+  password: z.string().min(1, "Password is required."),
 });
 
 type LoginFormViewModel = z.infer<typeof LoginSchema>;
@@ -39,19 +39,19 @@ export default function LoginForm() {
 
       // Mock authentication
       if (data.email === "test@example.com" && data.password === "password") {
-        toast.success("Zalogowano pomyślnie!");
-        setRedirectTo("/generate"); // Set state to trigger navigation via useEffect
+        toast.success("Logged in successfully!");
+        setRedirectTo("/cards"); // Set state to trigger navigation via useEffect
       } else {
         form.setError("root", {
           type: "manual",
-          message: "Nieprawidłowy e-mail lub hasło.",
+          message: "Invalid email or password.",
         });
       }
     } catch (error) {
       console.error("Login form submission error:", error);
       form.setError("root", {
         type: "manual",
-        message: "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.",
+        message: "An unexpected error occurred. Please try again.",
       });
     }
   }
@@ -65,8 +65,8 @@ export default function LoginForm() {
   return (
     <Card className="w-[380px]">
       <CardHeader>
-        <CardTitle>Logowanie</CardTitle>
-        <CardDescription>Zaloguj się na swoje konto, aby uzyskać dostęp do fiszek.</CardDescription>
+        <CardTitle>Login</CardTitle>
+        <CardDescription>Log in to your account to access your flashcards.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -89,7 +89,7 @@ export default function LoginForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Hasło</FormLabel>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting} />
                   </FormControl>
@@ -100,16 +100,16 @@ export default function LoginForm() {
             {form.formState.errors.root && <FormMessage>{form.formState.errors.root.message}</FormMessage>}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Zaloguj się
+              Login
             </Button>
           </form>
         </Form>
       </CardContent>
       <CardFooter>
         <p className="text-sm text-center w-full">
-          Nie masz konta?{" "}
+          Don't have an account?{" "}
           <a href="/register" className="text-blue-600 hover:underline" aria-disabled={isSubmitting}>
-            Zarejestruj się
+            Register
           </a>
         </p>
       </CardFooter>

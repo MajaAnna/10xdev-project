@@ -1,8 +1,10 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -24,6 +26,7 @@ const registerSchema = z
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const RegisterForm = () => {
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -33,9 +36,27 @@ const RegisterForm = () => {
     },
   });
 
-  const onSubmit = (values: RegisterFormValues) => {
-    console.log(values);
+  const onSubmit = async (values: RegisterFormValues) => {
+    try {
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log(values);
+      toast.success("Account created successfully!");
+      setRedirectTo("/cards");
+    } catch (error) {
+      console.error("Registration form submission error:", error);
+      form.setError("root", {
+        type: "manual",
+        message: "An unexpected error occurred. Please try again.",
+      });
+    }
   };
+
+  useEffect(() => {
+    if (redirectTo) {
+      window.location.href = redirectTo;
+    }
+  }, [redirectTo]);
 
   return (
     <Card>

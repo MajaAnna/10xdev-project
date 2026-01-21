@@ -21,16 +21,15 @@ const TopNav: React.FC = () => {
 
   const links = [
     { href: "/generate", label: "Generator" },
-    { href: "/cards", label: "Moje Fiszki" },
-    { href: "/study", label: "Ucz się" },
-    { href: "/profile", label: "Profil" },
+    { href: "/study", label: "Study" },
+    { href: "/profile", label: "Profile" },
   ];
 
   return (
     <div className="border-b">
       <div className="container flex h-14 items-center px-4">
-        <a href="/" className="mr-6 flex items-center space-x-2">
-          <span className="font-bold">AI Cards</span>
+        <a href="/cards" className="mr-6 flex items-center space-x-2">
+          <span className="font-bold">My Cards</span>
         </a>
 
         {/* Desktop Navigation */}

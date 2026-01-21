@@ -72,7 +72,15 @@ const MyCardsView = () => {
         </div>
       )}
 
-      {!isLoading && !error && <SavedCardGrid cards={cards} onEdit={handleEditCard} onDelete={handleDeleteCard} />}
+      {!isLoading && !error && cards.length === 0 && (
+        <div className="flex justify-center items-center h-64">
+          <p className="text-muted-foreground">No flashcards existing yet</p>
+        </div>
+      )}
+
+      {!isLoading && !error && cards.length > 0 && (
+        <SavedCardGrid cards={cards} onEdit={handleEditCard} onDelete={handleDeleteCard} />
+      )}
 
       <ManualCardModal
         isOpen={isManualModalOpen}
