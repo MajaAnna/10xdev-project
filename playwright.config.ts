@@ -94,18 +94,14 @@ export default defineConfig({
   ],
 
   // Start dev server before tests
+  // Note: dev:e2e script sets PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY
+  // from TEST_SUPABASE_URL and TEST_SUPABASE_ANON_KEY for client-side usage
   webServer: {
     command: "npm run dev:e2e",
     url: "http://localhost:4321",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
-    stdout: "ignore",
+    stdout: "pipe", // Changed from "ignore" to see dev server output
     stderr: "pipe",
-    env: {
-      // Override Supabase config for e2e tests
-      // This makes the dev server use cloud Supabase instead of local
-      PUBLIC_SUPABASE_URL: process.env.TEST_SUPABASE_URL || process.env.PUBLIC_SUPABASE_URL || "",
-      PUBLIC_SUPABASE_ANON_KEY: process.env.TEST_SUPABASE_ANON_KEY || process.env.PUBLIC_SUPABASE_ANON_KEY || "",
-    },
   },
 });
