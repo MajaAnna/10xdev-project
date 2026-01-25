@@ -3,11 +3,13 @@
 ## Prerequisites
 
 1. Start the development server:
+
 ```bash
 npm run dev
 ```
 
 2. Ensure you have a generation record in the database (for AI-generated flashcard tests):
+
 ```bash
 # First, create a generation via POST /api/generations
 curl -X POST http://localhost:4321/api/generations \
@@ -38,6 +40,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 **Expected Response (201 Created):**
+
 ```json
 {
   "data": {
@@ -69,6 +72,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 **Expected Response (201 Created):**
+
 ```json
 {
   "data": {
@@ -84,6 +88,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 **Verify generation counts updated:**
+
 ```bash
 # Check that accepted_unedited_count was incremented
 # Query the database or check via GET /api/generations/1 (when implemented)
@@ -106,6 +111,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 **Expected Response (201 Created):**
+
 ```json
 {
   "data": {
@@ -137,6 +143,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 **Expected Response (400 Bad Request):**
+
 ```json
 {
   "error": {
@@ -168,6 +175,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 **Expected Response (400 Bad Request):**
+
 ```json
 {
   "error": {
@@ -199,6 +207,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 **Expected Response (400 Bad Request):**
+
 ```json
 {
   "error": {
@@ -230,6 +239,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 **Expected Response (400 Bad Request):**
+
 ```json
 {
   "error": {
@@ -261,6 +271,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 **Expected Response (400 Bad Request):**
+
 ```json
 {
   "error": {
@@ -292,6 +303,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 **Expected Response (400 Bad Request):**
+
 ```json
 {
   "error": {
@@ -323,6 +335,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 **Expected Response (404 Not Found):**
+
 ```json
 {
   "error": {
@@ -343,6 +356,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 **Expected Response (400 Bad Request):**
+
 ```json
 {
   "error": {
@@ -366,8 +380,8 @@ After creating flashcards, verify in the database:
 SELECT * FROM flashcards ORDER BY created_at DESC LIMIT 5;
 
 -- Check generation counts were updated
-SELECT id, generated_count, accepted_unedited_count, accepted_edited_count 
-FROM generations 
+SELECT id, generated_count, accepted_unedited_count, accepted_edited_count
+FROM generations
 WHERE id = 1;
 
 -- Verify flashcard belongs to default user
@@ -379,6 +393,7 @@ SELECT * FROM flashcards WHERE user_id = '00000000-0000-0000-0000-000000000001';
 ## Tips for Testing
 
 1. **Use jq for pretty output:**
+
 ```bash
 curl -X POST http://localhost:4321/api/flashcards \
   -H "Content-Type: application/json" \
@@ -387,6 +402,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 2. **Save response to file:**
+
 ```bash
 curl -X POST http://localhost:4321/api/flashcards \
   -H "Content-Type: application/json" \
@@ -395,6 +411,7 @@ curl -X POST http://localhost:4321/api/flashcards \
 ```
 
 3. **Include response headers:**
+
 ```bash
 curl -i -X POST http://localhost:4321/api/flashcards \
   -H "Content-Type: application/json" \
@@ -402,9 +419,9 @@ curl -i -X POST http://localhost:4321/api/flashcards \
 ```
 
 4. **Verbose output for debugging:**
+
 ```bash
 curl -v -X POST http://localhost:4321/api/flashcards \
   -H "Content-Type: application/json" \
   -d '{"front":"Test","back":"Answer","source":"manual","generation_id":null}'
 ```
-

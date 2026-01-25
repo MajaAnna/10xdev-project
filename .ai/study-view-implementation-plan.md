@@ -1,12 +1,15 @@
 # Plan implementacji widoku Study
 
 ## 1. Przegląd
+
 Widok "Study" (`/study`) stanowi minimalistyczne, wolne od rozpraszaczy środowisko do nauki, w którym użytkownik może przeglądać swoje zapisane fiszki. Sesja polega na cyklicznym przechodzeniu przez karty, odsłanianiu odpowiedzi i prostej samoocenie, co stanowi podstawę dla przyszłej implementacji algorytmu powtórek.
 
 ## 2. Routing widoku
+
 Widok będzie dostępny pod ścieżką URL: `/study`. Odpowiedni plik strony zostanie utworzony w `src/pages/study.astro`.
 
 ## 3. Struktura komponentów
+
 Hierarchia komponentów React, które zbudują widok, będzie renderowana przez główny komponent `StudyView`.
 
 ```
@@ -24,6 +27,7 @@ Hierarchia komponentów React, które zbudują widok, będzie renderowana przez 
 ## 4. Szczegóły komponentów
 
 ### `StudyView.tsx`
+
 - **Opis komponentu**: Główny komponent zarządzający całym widokiem nauki. Wykorzystuje hook `useStudySession` do obsługi stanu i logiki, a następnie renderuje odpowiednie komponenty potomne w zależności od aktualnego stanu sesji (ładowanie, błąd, aktywna sesja, zakończona sesja).
 - **Główne elementy**: Komponenty `Spinner`, `Alert`, `SessionEndMessage`, `StudyProgressBar`, `FlashcardViewer`, `StudyControls`.
 - **Obsługiwane interakcje**: Brak bezpośrednich interakcji, deleguje je do komponentów potomnych.
@@ -32,6 +36,7 @@ Hierarchia komponentów React, które zbudują widok, będzie renderowana przez 
 - **Propsy**: Brak.
 
 ### `FlashcardViewer.tsx`
+
 - **Opis komponentu**: Komponent prezentacyjny odpowiedzialny za wyświetlanie treści aktualnej fiszki. Pokazuje przód karty, a po otrzymaniu odpowiedniego propa, również jej tył.
 - **Główne elementy**: Elementy `Card` z biblioteki `shadcn/ui` do stylizacji.
 - **Obsługiwane interakcje**: Brak.
@@ -42,6 +47,7 @@ Hierarchia komponentów React, które zbudują widok, będzie renderowana przez 
   - `isAnswerVisible: boolean` - flaga decydująca o wyświetleniu tyłu karty.
 
 ### `StudyControls.tsx`
+
 - **Opis komponentu**: Wyświetla przyciski akcji dla użytkownika. Renderuje przycisk "Show Answer" lub przyciski "Don't Know" i "Know" w zależności od tego, czy odpowiedź na fiszce jest już widoczna.
 - **Główne elementy**: Komponenty `Button` z `shadcn/ui`.
 - **Obsługiwane interakcje**:
@@ -56,6 +62,7 @@ Hierarchia komponentów React, które zbudują widok, będzie renderowana przez 
   - `onEvaluate: (knewIt: boolean) => void` - funkcja zwrotna wywoływana po kliknięciu przycisku oceny.
 
 ### `StudyProgressBar.tsx`
+
 - **Opis komponentu**: Prosty komponent tekstowy lub wizualny (np. z użyciem komponentu `Progress` z `shadcn/ui`) pokazujący postęp w sesji.
 - **Główne elementy**: Tekst (np. "5 / 20") i/lub `Progress` bar.
 - **Obsługiwane interakcje**: Brak.
@@ -66,6 +73,7 @@ Hierarchia komponentów React, które zbudują widok, będzie renderowana przez 
   - `total: number` - łączna liczba fiszek w sesji.
 
 ### `SessionEndMessage.tsx`
+
 - **Opis komponentu**: Wyświetla komunikat o zakończeniu sesji wraz z opcjami dalszych działań.
 - **Główne elementy**: Tekst informacyjny i dwa przyciski `Button` ("Restart", "Return to Generator").
 - **Obsługiwane interakcje**:
@@ -78,7 +86,9 @@ Hierarchia komponentów React, które zbudują widok, będzie renderowana przez 
   - `onGoToGenerator: () => void` - funkcja zwrotna do nawigacji do widoku generatora.
 
 ## 5. Typy
+
 Do implementacji widoku wykorzystane zostaną istniejące typy. Nie ma potrzeby tworzenia nowych, złożonych modeli widoku.
+
 - **`FlashcardDto`**: Podstawowy obiekt fiszki pobierany z API.
   ```typescript
   import type { Tables } from "./db/database.types";
@@ -94,9 +104,11 @@ Do implementacji widoku wykorzystane zostaną istniejące typy. Nie ma potrzeby 
   ```
 
 ## 6. Zarządzanie stanem
+
 Cała logika i stan widoku `Study` zostaną zamknięte w niestandardowym hooku `useStudySession.ts`. Takie podejście jest zgodne z istniejącymi wzorcami w projekcie (np. `useMyCards.ts`) i zapewnia czystą separację logiki od prezentacji.
 
 ### Hook `useStudySession`
+
 - **Przeznaczenie**: Zarządzanie całym cyklem życia sesji nauki, od pobrania danych, przez śledzenie postępów, aż po zakończenie i restart sesji.
 - **Zarządzany stan**:
   - `status: 'loading' | 'error' | 'ready' | 'finished'`
@@ -108,7 +120,7 @@ Cała logika i stan widoku `Study` zostaną zamknięte w niestandardowym hooku `
 - **Zwracane wartości**:
   ```typescript
   interface UseStudySessionReturn {
-    status: 'loading' | 'error' | 'ready' | 'finished';
+    status: "loading" | "error" | "ready" | "finished";
     error: string | null;
     currentCard?: FlashcardDto;
     isAnswerVisible: boolean;
@@ -125,6 +137,7 @@ Cała logika i stan widoku `Study` zostaną zamknięte w niestandardowym hooku `
   ```
 
 ## 7. Integracja API
+
 - **Endpoint**: `GET /api/flashcards`
 - **Proces**:
   1. W hooku `useStudySession`, `useEffect` zainicjuje pobieranie danych.
@@ -133,6 +146,7 @@ Cała logika i stan widoku `Study` zostaną zamknięte w niestandardowym hooku `
   4. **Odpowiedź (błąd)**: W przypadku błędu sieciowego lub statusu odpowiedzi innego niż 2xx, w stanie zostanie zapisany komunikat o błędzie, a status sesji ustawiony na `error`.
 
 ## 8. Interakcje użytkownika
+
 - **Wejście na stronę**: Użytkownik widzi wskaźnik ładowania.
 - **Kliknięcie "Show Answer"**: Odsłania tył fiszki. Zestaw przycisków zmienia się na "Don't Know" i "Know".
 - **Kliknięcie "Don't Know" / "Know"**: Przechodzi do następnej fiszki w kolejce, pokazując jej przód. Pasek postępu aktualizuje się. Zestaw przycisków wraca do "Show Answer".
@@ -141,15 +155,18 @@ Cała logika i stan widoku `Study` zostaną zamknięte w niestandardowym hooku `
 - **Kliknięcie "Return to Generator"**: Użytkownik jest przekierowywany na stronę `/generate`.
 
 ## 9. Warunki i walidacja
+
 - Główna walidacja odbywa się po stronie hooka `useStudySession` w odpowiedzi na dane z API:
   - **Brak fiszek**: Jeśli `GET /api/flashcards` zwróci pustą tablicę, komponent `StudyView` wyświetli stosowny komunikat zamiast interfejsu nauki.
   - **Błąd API**: Jeśli zapytanie API się nie powiedzie, `StudyView` wyświetli komunikat o błędzie.
 
 ## 10. Obsługa błędów
+
 - **Błąd ładowania fiszek**: Jeśli wywołanie `GET /api/flashcards` zwróci błąd, hook `useStudySession` ustawi `status: 'error'` i przekaże komunikat błędu. Komponent `StudyView` wyświetli go użytkownikowi za pomocą komponentu `Alert`, informując o problemie i sugerując odświeżenie strony.
 - **Brak fiszek**: To nie jest błąd, lecz stan. Jeśli API zwróci pustą tablicę fiszek, `StudyView` wyświetli informację "Nie masz jeszcze żadnych fiszek do nauki" wraz z przyciskiem/linkiem prowadzącym do strony `/generate`, zachęcając do stworzenia pierwszych kart.
 
 ## 11. Kroki implementacji
+
 1.  Utworzyć plik strony `src/pages/study.astro`.
 2.  W pliku `study.astro`, zaimportować i wyrenderować komponent `StudyView.tsx` z dyrektywą `client:load`.
 3.  Stworzyć plik `src/components/hooks/useStudySession.ts` i zaimplementować w nim logikę pobierania danych oraz zarządzania stanem sesji.

@@ -13,7 +13,7 @@ Konstruktor inicjalizuje serwis, pobierając klucz API OpenRouter z zmiennych ś
  * Tworzy instancję OpenRouterService.
  * @throws {Error} Jeśli zmienna środowiskowa OPENROUTER_API_KEY nie jest ustawiona.
  */
-constructor()
+constructor();
 ```
 
 ## 3. Publiczne metody i pola
@@ -25,10 +25,10 @@ Jest to główna metoda publiczna usługi, która wysyła żądanie uzupełnieni
 **Parametry:**
 
 - `request` (`OpenRouterRequest`): Obiekt zawierający wszystkie niezbędne dane do żądania, w tym:
-    - `model` (string): Nazwa modelu do użycia (np. `openai/gpt-4o`).
-    - `messages` (Array): Tablica obiektów wiadomości (`{ role: 'system' | 'user', content: string }`).
-    - `response_format` (Object, optional): Definicja formatu odpowiedzi, szczególnie do uzyskiwania JSON-a opartego na schemacie.
-    - Inne parametry modelu, jak `temperature`, `max_tokens`, `top_p`.
+  - `model` (string): Nazwa modelu do użycia (np. `openai/gpt-4o`).
+  - `messages` (Array): Tablica obiektów wiadomości (`{ role: 'system' | 'user', content: string }`).
+  - `response_format` (Object, optional): Definicja formatu odpowiedzi, szczególnie do uzyskiwania JSON-a opartego na schemacie.
+  - Inne parametry modelu, jak `temperature`, `max_tokens`, `top_p`.
 
 **Zwraca:**
 
@@ -39,55 +39,57 @@ Jest to główna metoda publiczna usługi, która wysyła żądanie uzupełnieni
 ```typescript
 // Ten schemat definiuje oczekiwaną strukturę JSON dla generowanych fiszek.
 const flashcardsSchema = {
-    name: 'generate_flashcards_from_text',
-    strict: true,
-    schema: {
-        type: 'object',
-        properties: {
-            flashcards: {
-                type: 'array',
-                items: {
-                    type: 'object',
-                    properties: {
-                        front: { type: 'string', description: 'Treść przedniej strony fiszki.' },
-                        back: { type: 'string', description: 'Treść tylnej strony fiszki.' }
-                    },
-                    required: ['front', 'back']
-                }
-            }
+  name: "generate_flashcards_from_text",
+  strict: true,
+  schema: {
+    type: "object",
+    properties: {
+      flashcards: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            front: { type: "string", description: "Treść przedniej strony fiszki." },
+            back: { type: "string", description: "Treść tylnej strony fiszki." },
+          },
+          required: ["front", "back"],
         },
-        required: ['flashcards']
-    }
+      },
+    },
+    required: ["flashcards"],
+  },
 };
 
 const openRouterService = new OpenRouterService();
-const userPastedText = "Fotosynteza to proces biochemiczny, w którym organizmy samożywne, takie jak rośliny, algi i niektóre bakterie, przekształcają energię świetlną w energię chemiczną, magazynowaną w postaci związków organicznych. Kluczowym barwnikiem jest chlorofil.";
+const userPastedText =
+  "Fotosynteza to proces biochemiczny, w którym organizmy samożywne, takie jak rośliny, algi i niektóre bakterie, przekształcają energię świetlną w energię chemiczną, magazynowaną w postaci związków organicznych. Kluczowym barwnikiem jest chlorofil.";
 
 try {
-    const response = await openRouterService.getChatCompletion({
-        // Model można będzie konfigurować w przyszłości
-        model: 'openai/gpt-4o', 
-        messages: [
-            { 
-                role: 'system', 
-                content: 'Jesteś asystentem, który tworzy fiszki na podstawie dostarczonego tekstu. Zawsze odpowiadaj w formacie JSON zgodnym z podanym schematem.' 
-            },
-            { 
-                role: 'user', 
-                content: userPastedText 
-            }
-        ],
-        response_format: {
-            type: 'json_schema',
-            json_schema: flashcardsSchema
-        },
-        temperature: 0.7
-    });
+  const response = await openRouterService.getChatCompletion({
+    // Model można będzie konfigurować w przyszłości
+    model: "openai/gpt-4o",
+    messages: [
+      {
+        role: "system",
+        content:
+          "Jesteś asystentem, który tworzy fiszki na podstawie dostarczonego tekstu. Zawsze odpowiadaj w formacie JSON zgodnym z podanym schematem.",
+      },
+      {
+        role: "user",
+        content: userPastedText,
+      },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: flashcardsSchema,
+    },
+    temperature: 0.7,
+  });
 
-    const generatedData = JSON.parse(response.choices[0].message.content);
-    console.log(generatedData.flashcards); // [{ front: "Czym jest fotosynteza?", back: "Procesem biochemicznym przekształcającym energię świetlną w chemiczną." }, ...]
+  const generatedData = JSON.parse(response.choices[0].message.content);
+  console.log(generatedData.flashcards); // [{ front: "Czym jest fotosynteza?", back: "Procesem biochemicznym przekształcającym energię świetlną w chemiczną." }, ...]
 } catch (error) {
-    console.error('Błąd podczas generowania fiszek:', error);
+  console.error("Błąd podczas generowania fiszek:", error);
 }
 ```
 
@@ -128,9 +130,10 @@ Usługa implementuje strategię obsługi błędów opartą na `early return` i `
 
 3.  **Zdefiniowanie schematów walidacji i odpowiedzi (Zod):**
     - Stwórz nowy plik `src/lib/schemas/generation.schemas.ts`, aby zarządzać schematami dla generowania treści. Użycie Zod zapewni walidację typów w trakcie działania aplikacji.
+
       ```typescript
       // src/lib/schemas/generation.schemas.ts
-      import { z } from 'zod';
+      import { z } from "zod";
 
       export const flashcardGenerationSchema = z.object({
         front: z.string().min(1, "Pole 'front' nie może być puste."),
@@ -153,17 +156,17 @@ Usługa implementuje strategię obsługi błędów opartą na `early return` i `
       ```typescript
       // src/lib/services/openrouter.service.ts
       // ... implementacja OpenRouterService pozostaje bez zmian ...
-      import type { OpenRouterRequest, OpenRouterResponse } from '../../types';
+      import type { OpenRouterRequest, OpenRouterResponse } from "../../types";
 
       export class OpenRouterService {
         private readonly apiKey: string;
-        private readonly baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
+        private readonly baseUrl = "https://openrouter.ai/api/v1/chat/completions";
 
         constructor() {
           const apiKey = import.meta.env.OPENROUTER_API_KEY;
           if (!apiKey) {
-            console.error('Klucz API OpenRouter nie jest skonfigurowany.');
-            throw new Error('Klucz API OpenRouter (OPENROUTER_API_KEY) nie jest ustawiony w zmiennych środowiskowych.');
+            console.error("Klucz API OpenRouter nie jest skonfigurowany.");
+            throw new Error("Klucz API OpenRouter (OPENROUTER_API_KEY) nie jest ustawiony w zmiennych środowiskowych.");
           }
           this.apiKey = apiKey;
         }
@@ -179,30 +182,30 @@ Usługa implementuje strategię obsługi błędów opartą na `early return` i `
 
       ```typescript
       // src/pages/api/generations.ts
-      import type { APIRoute } from 'astro';
-      import { OpenRouterService } from '../../lib/services/openrouter.service';
-      import { generationRequestSchema } from '../../lib/schemas/generation.schemas';
+      import type { APIRoute } from "astro";
+      import { OpenRouterService } from "../../lib/services/openrouter.service";
+      import { generationRequestSchema } from "../../lib/schemas/generation.schemas";
 
       const flashcardsSchema = {
-          name: 'generate_flashcards_from_text',
-          strict: true,
-          schema: {
-              type: 'object',
-              properties: {
-                  flashcards: {
-                      type: 'array',
-                      items: {
-                          type: 'object',
-                          properties: {
-                              front: { type: 'string' },
-                              back: { type: 'string' }
-                          },
-                          required: ['front', 'back']
-                      }
-                  }
+        name: "generate_flashcards_from_text",
+        strict: true,
+        schema: {
+          type: "object",
+          properties: {
+            flashcards: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  front: { type: "string" },
+                  back: { type: "string" },
+                },
+                required: ["front", "back"],
               },
-              required: ['flashcards']
-          }
+            },
+          },
+          required: ["flashcards"],
+        },
       };
 
       export const POST: APIRoute = async ({ request }) => {
@@ -211,35 +214,44 @@ Usługa implementuje strategię obsługi błędów opartą na `early return` i `
           const validation = generationRequestSchema.safeParse(body);
 
           if (!validation.success) {
-            return new Response(JSON.stringify({ error: 'Nieprawidłowe dane wejściowe.', details: validation.error.flatten() }), { status: 400 });
+            return new Response(
+              JSON.stringify({ error: "Nieprawidłowe dane wejściowe.", details: validation.error.flatten() }),
+              { status: 400 }
+            );
           }
 
           const { text, model } = validation.data;
           const openRouterService = new OpenRouterService();
-          
+
           const response = await openRouterService.getChatCompletion({
-              model: model || 'openai/gpt-4o', // Użyj modelu z requestu lub domyślnego
-              messages: [
-                  { role: 'system', content: 'Jesteś asystentem, który tworzy fiszki na podstawie dostarczonego tekstu. Zawsze odpowiadaj w formacie JSON zgodnym z podanym schematem.' },
-                  { role: 'user', content: text }
-              ],
-              response_format: {
-                  type: 'json_schema',
-                  json_schema: flashcardsSchema
-              }
+            model: model || "openai/gpt-4o", // Użyj modelu z requestu lub domyślnego
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Jesteś asystentem, który tworzy fiszki na podstawie dostarczonego tekstu. Zawsze odpowiadaj w formacie JSON zgodnym z podanym schematem.",
+              },
+              { role: "user", content: text },
+            ],
+            response_format: {
+              type: "json_schema",
+              json_schema: flashcardsSchema,
+            },
           });
 
           // Zwróć odpowiedź bezpośrednio do klienta
           return new Response(response.choices[0].message.content, {
             status: 200,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { "Content-Type": "application/json" },
           });
-
         } catch (error) {
           console.error(error);
-          const errorMessage = error instanceof Error ? error.message : 'Wystąpił nieznany błąd.';
-          return new Response(JSON.stringify({ error: 'Wystąpił wewnętrzny błąd serwera.', details: errorMessage }), { status: 500 });
+          const errorMessage = error instanceof Error ? error.message : "Wystąpił nieznany błąd.";
+          return new Response(JSON.stringify({ error: "Wystąpił wewnętrzny błąd serwera.", details: errorMessage }), {
+            status: 500,
+          });
         }
       };
       ```
+
     - Ten endpoint jest teraz gotowy do użycia przez frontend. Wystarczy wysłać żądanie POST na `/api/generations` z ciałem `{ "text": "..." }`.

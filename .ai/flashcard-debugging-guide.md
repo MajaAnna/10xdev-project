@@ -10,6 +10,7 @@ curl http://localhost:4321/
 ```
 
 If this fails, start the server:
+
 ```bash
 npm run dev
 ```
@@ -29,16 +30,15 @@ curl -X POST http://localhost:4321/api/generations \
 ```
 
 **Expected response:**
+
 ```json
 {
   "data": {
-    "generation_id": 1,  // ← NOTE THIS ID!
+    "generation_id": 1, // ← NOTE THIS ID!
     "model": "openai/gpt-4o-mini",
     "generation_duration": 2.5,
     "generated_count": 3,
-    "candidates": [
-      { "front": "...", "back": "..." }
-    ]
+    "candidates": [{ "front": "...", "back": "..." }]
   }
 }
 ```
@@ -58,8 +58,9 @@ LIMIT 5;
 ```
 
 **Expected output:**
+
 ```
- id |               user_id                | model              | generated_count | accepted_unedited_count | accepted_edited_count |     created_at      
+ id |               user_id                | model              | generated_count | accepted_unedited_count | accepted_edited_count |     created_at
 ----+--------------------------------------+--------------------+-----------------+-------------------------+-----------------------+---------------------
   1 | 00000000-0000-0000-0000-000000000001 | openai/gpt-4o-mini |               3 |                       0 |                     0 | 2025-12-10 14:30:00
 ```
@@ -80,10 +81,12 @@ curl -v -X POST http://localhost:4321/api/flashcards \
 ```
 
 **What to check:**
+
 - HTTP status code should be `201 Created`
 - Response should contain the flashcard with an `id`
 
 **If you get an error:**
+
 - Check the error message in the response
 - Check server console for logs
 
@@ -100,8 +103,9 @@ LIMIT 5;
 ```
 
 **Expected output:**
+
 ```
- id | generation_id |        front         |           back            |  source  |               user_id                |     created_at      
+ id | generation_id |        front         |           back            |  source  |               user_id                |     created_at
 ----+---------------+----------------------+---------------------------+----------+--------------------------------------+---------------------
   1 |          NULL | What is TypeScript?  | A typed superset of JS    | manual   | 00000000-0000-0000-0000-000000000001 | 2025-12-10 14:35:00
 ```
@@ -128,19 +132,21 @@ curl -v -X POST http://localhost:4321/api/flashcards \
 
 ```sql
 -- This is the query you ran that returned no rows
-SELECT id, generated_count, accepted_unedited_count, accepted_edited_count 
-FROM generations 
+SELECT id, generated_count, accepted_unedited_count, accepted_edited_count
+FROM generations
 WHERE id = 1;
 ```
 
 **Expected output (after creating AI flashcard):**
+
 ```
- id | generated_count | accepted_unedited_count | accepted_edited_count 
+ id | generated_count | accepted_unedited_count | accepted_edited_count
 ----+-----------------+-------------------------+-----------------------
   1 |               3 |                       1 |                     0
 ```
 
 **If no rows returned:**
+
 - The generation with `id = 1` doesn't exist
 - Check what generation_id you actually have:
   ```sql
@@ -156,6 +162,7 @@ WHERE id = 1;
 **Cause:** No generation exists with that ID
 
 **Solution:**
+
 ```sql
 -- Find all generations
 SELECT id, created_at FROM generations ORDER BY created_at DESC;
@@ -170,19 +177,21 @@ SELECT id, created_at FROM generations ORDER BY created_at DESC;
 **Cause:** Rollback occurred due to error in `updateGenerationCounts()`
 
 **Check server logs:**
+
 ```bash
 # Look for errors in your terminal where npm run dev is running
 # Should see: "Flashcard creation error: ..."
 ```
 
 **Debug query:**
+
 ```sql
 -- Check if flashcard exists
 SELECT COUNT(*) FROM flashcards WHERE generation_id = 1;
 
 -- Check generation counts
-SELECT accepted_unedited_count, accepted_edited_count 
-FROM generations 
+SELECT accepted_unedited_count, accepted_edited_count
+FROM generations
 WHERE id = 1;
 ```
 
@@ -193,11 +202,12 @@ WHERE id = 1;
 **Cause:** Using wrong generation_id or generation belongs to different user
 
 **Solution:**
+
 ```sql
 -- Verify generation exists and belongs to default user
-SELECT id, user_id 
-FROM generations 
-WHERE id = 1 
+SELECT id, user_id
+FROM generations
+WHERE id = 1
   AND user_id = '00000000-0000-0000-0000-000000000001';
 ```
 
@@ -206,6 +216,7 @@ WHERE id = 1
 ### Issue 4: Flashcard not created at all
 
 **Check:**
+
 1. Server logs for errors
 2. Validation errors in curl response
 3. Database connection
@@ -286,6 +297,7 @@ echo "WHERE id = $GENERATION_ID;"
 ```
 
 Save this as `test-complete-flow.sh` and run:
+
 ```bash
 chmod +x test-complete-flow.sh
 ./test-complete-flow.sh
@@ -297,30 +309,30 @@ chmod +x test-complete-flow.sh
 
 ```sql
 -- 1. Check if default user exists
-SELECT id, email FROM auth.users 
+SELECT id, email FROM auth.users
 WHERE id = '00000000-0000-0000-0000-000000000001';
 
 -- 2. Count total flashcards
 SELECT COUNT(*) as total_flashcards FROM flashcards;
 
 -- 3. Count flashcards by source
-SELECT source, COUNT(*) as count 
-FROM flashcards 
+SELECT source, COUNT(*) as count
+FROM flashcards
 GROUP BY source;
 
 -- 4. Check generation statistics
-SELECT 
+SELECT
   id,
   generated_count,
   accepted_unedited_count,
   accepted_edited_count,
-  (accepted_unedited_count + accepted_edited_count)::float / 
+  (accepted_unedited_count + accepted_edited_count)::float /
     NULLIF(generated_count, 0) * 100 as acceptance_rate
 FROM generations
 ORDER BY created_at DESC;
 
 -- 5. Check flashcards with their generation info
-SELECT 
+SELECT
   f.id,
   f.front,
   f.source,
@@ -354,4 +366,3 @@ echo "SELECT id, generation_id, source FROM flashcards;" | # your psql command
 ```
 
 **Tell me the results and I'll help you debug further!**
-

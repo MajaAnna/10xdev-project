@@ -7,11 +7,7 @@ interface StudyControlsProps {
   onEvaluate: (knewIt: boolean) => void;
 }
 
-export const StudyControls: React.FC<StudyControlsProps> = ({
-  isAnswerVisible,
-  onShowAnswer,
-  onEvaluate,
-}) => {
+export const StudyControls: React.FC<StudyControlsProps> = ({ isAnswerVisible, onShowAnswer, onEvaluate }) => {
   return (
     <div className="flex w-full justify-center gap-4">
       {!isAnswerVisible ? (

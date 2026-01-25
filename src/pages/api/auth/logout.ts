@@ -25,6 +25,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   } catch (err) {
     console.error("Logout API: Unexpected error:", err);
+    console.error("Logout API: Unexpected error:", err);
     return new Response(JSON.stringify({ error: "An unexpected error occurred during logout." }), {
       status: 500,
       headers: {

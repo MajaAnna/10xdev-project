@@ -5,6 +5,7 @@
 The `POST /api/generations` endpoint generates flashcard candidates from source text using AI models available through the OpenRouter API. The endpoint accepts source text and an optional AI model name, calls the AI service, creates a generation session log in the database, and returns temporary flashcard candidates (which are not saved to the database until accepted by the user).
 
 **Key Features**:
+
 - Validates source text length (100-10,000 characters)
 - Calculates MD5 hash of source text for deduplication and privacy
 - Communicates with OpenRouter API asynchronously
@@ -16,14 +17,17 @@ The `POST /api/generations` endpoint generates flashcard candidates from source 
 ## 2. Request Details
 
 ### HTTP Method
+
 `POST`
 
 ### URL Structure
+
 ```
 /api/generations
 ```
 
 ### Request Headers
+
 ```
 Content-Type: application/json
 Authorization: Bearer <jwt_token>  (Production only)
@@ -36,12 +40,15 @@ Authorization: Bearer <jwt_token>  (Production only)
 **Request Body (JSON)**:
 
 **Required**:
+
 - `source_text` (string, 100-10,000 characters): Source text to generate flashcards from
 
 **Optional**:
+
 - `model` (string, default: "gpt-4"): AI model to use for generation
 
 ### Example Request Body
+
 ```json
 {
   "source_text": "Photosynthesis is the process by which plants use sunlight, water, and carbon dioxide to create oxygen and energy in the form of sugar. It occurs in the chloroplasts of plant cells...",
@@ -52,6 +59,7 @@ Authorization: Bearer <jwt_token>  (Production only)
 ## 3. Types Used
 
 ### Command Models
+
 - **`GenerateFlashcardsCommand`** (from `src/types.ts`):
   ```typescript
   interface GenerateFlashcardsCommand {
@@ -61,7 +69,9 @@ Authorization: Bearer <jwt_token>  (Production only)
   ```
 
 ### Response DTOs
+
 - **`GenerationResponseDto`** (from `src/types.ts`):
+
   ```typescript
   interface GenerationResponseDto {
     generation_id: number;
@@ -73,6 +83,7 @@ Authorization: Bearer <jwt_token>  (Production only)
   ```
 
 - **`FlashcardCandidateDto`** (from `src/types.ts`):
+
   ```typescript
   interface FlashcardCandidateDto {
     front: string;
@@ -88,6 +99,7 @@ Authorization: Bearer <jwt_token>  (Production only)
   ```
 
 ### Error DTOs
+
 - **`ErrorResponseDto`** (from `src/types.ts`):
   ```typescript
   interface ErrorResponseDto {
@@ -100,12 +112,14 @@ Authorization: Bearer <jwt_token>  (Production only)
   ```
 
 ### Database Entities
+
 - **`GenerationEntity`** (from `src/types.ts`): For interactions with the `generations` table
 - **`GenerationErrorLogEntity`** (from `src/types.ts`): For error logging
 
 ## 4. Response Details
 
 ### Success (201 Created)
+
 ```json
 {
   "data": {
@@ -130,6 +144,7 @@ Authorization: Bearer <jwt_token>  (Production only)
 ### Errors
 
 #### 400 Bad Request - Validation Error
+
 ```json
 {
   "error": {
@@ -146,6 +161,7 @@ Authorization: Bearer <jwt_token>  (Production only)
 ```
 
 #### 401 Unauthorized - Missing or Invalid Token (Production)
+
 ```json
 {
   "error": {
@@ -156,6 +172,7 @@ Authorization: Bearer <jwt_token>  (Production only)
 ```
 
 #### 429 Too Many Requests - Rate Limit Exceeded
+
 ```json
 {
   "error": {
@@ -166,6 +183,7 @@ Authorization: Bearer <jwt_token>  (Production only)
 ```
 
 #### 500 Internal Server Error - Generation Failed
+
 ```json
 {
   "error": {
@@ -176,6 +194,7 @@ Authorization: Bearer <jwt_token>  (Production only)
 ```
 
 #### 503 Service Unavailable - AI Service Unavailable
+
 ```json
 {
   "error": {
@@ -188,6 +207,7 @@ Authorization: Bearer <jwt_token>  (Production only)
 ## 5. Data Flow
 
 ### Flow Diagram
+
 ```
 1. Request arrives at POST /api/generations endpoint
    ↓
@@ -223,7 +243,7 @@ Authorization: Bearer <jwt_token>  (Production only)
    - generation_duration
    - generated_count
    - candidates[]
-   
+
 5b. Error: Handle failure
    ↓
 6b. Create record in generation_error_logs table
@@ -238,6 +258,7 @@ Authorization: Bearer <jwt_token>  (Production only)
 ### External Service Interactions
 
 #### OpenRouter API
+
 - **URL**: `https://openrouter.ai/api/v1/chat/completions`
 - **Method**: POST
 - **Authorization**: Bearer token (API key from env)
@@ -267,7 +288,9 @@ Authorization: Bearer <jwt_token>  (Production only)
 ### Database Interactions
 
 #### Supabase - generations Table
+
 **Operation**: INSERT
+
 ```sql
 INSERT INTO generations (
   user_id,
@@ -283,7 +306,9 @@ RETURNING id;
 ```
 
 #### Supabase - generation_error_logs Table
+
 **Operation**: INSERT (on error)
+
 ```sql
 INSERT INTO generation_error_logs (
   user_id,
@@ -302,12 +327,14 @@ INSERT INTO generation_error_logs (
 #### Supabase Auth Implementation
 
 **Development Mode**:
+
 - Authentication is optional for easier testing
 - Endpoint works without `Authorization` header
 - `user_id` will use `DEFAULT_USER_ID` from `src/db/supabase.client.ts`: `00000000-0000-0000-0000-000000000001`
 - **Warning**: This should NEVER be used in production
 
 **Production Mode** (Initial Implementation):
+
 - **Required JWT Bearer token** in `Authorization` header
 - Token verification handled by Supabase Auth
 - Implementation steps:
@@ -318,6 +345,7 @@ INSERT INTO generation_error_logs (
   5. Use `user_id` for all database operations
 
 **Implementation in Endpoint**:
+
 ```typescript
 // Import default user ID from supabase client
 import { DEFAULT_USER_ID } from "../../db/supabase.client";
@@ -329,7 +357,7 @@ let userId: string;
 if (isProduction) {
   // Extract token from Authorization header
   const authHeader = request.headers.get("Authorization");
-  
+
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return new Response(
       JSON.stringify({
@@ -345,7 +373,10 @@ if (isProduction) {
   const token = authHeader.substring(7); // Remove "Bearer " prefix
 
   // Verify token with Supabase
-  const { data: { user }, error: authError } = await locals.supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authError,
+  } = await locals.supabase.auth.getUser(token);
 
   if (authError || !user) {
     return new Response(
@@ -370,19 +401,20 @@ if (isProduction) {
 ### Input Validation
 
 #### Zod Schema
+
 ```typescript
 const generateFlashcardsSchema = z.object({
-  source_text: z.string()
+  source_text: z
+    .string()
     .min(100, "Source text must be at least 100 characters")
     .max(10000, "Source text must not exceed 10,000 characters")
     .trim(),
-  model: z.string()
-    .optional()
-    .default("gpt-4")
+  model: z.string().optional().default("gpt-4"),
 });
 ```
 
 #### Additional Validation Safeguards
+
 - **Trim whitespace**: Remove white characters before length validation
 - **Sanitization**: Check that text doesn't contain only whitespace
 - **Type checking**: Zod automatically validates types
@@ -391,6 +423,7 @@ const generateFlashcardsSchema = z.object({
 ### API Key Security
 
 #### OpenRouter API Key
+
 - **Storage**: In environment variable `OPENROUTER_API_KEY`
 - **Access**: Server-side only (Astro API routes)
 - **Verification**: Check key exists before calling API
@@ -399,11 +432,13 @@ const generateFlashcardsSchema = z.object({
 ### Data Privacy
 
 #### Source Text Hashing
+
 - **Algorithm**: MD5
 - **Purpose**: Deduplication and analytics without storing full text
 - **Implementation**: Native Node.js `crypto.createHash('md5')`
 
 #### We Don't Store Full Source Text
+
 - Only hash and length in `generations` table
 - Only hash and length in `generation_error_logs` table
 - Full text is only sent to OpenRouter API
@@ -411,6 +446,7 @@ const generateFlashcardsSchema = z.object({
 ### Rate Limiting
 
 #### Protection Against Abuse
+
 - **OpenRouter**: Built-in limits in the service
 - **Handle 429**: Properly forward error to user
 - **Future enhancement**: Implement custom per-user rate limiting
@@ -422,6 +458,7 @@ const generateFlashcardsSchema = z.object({
 #### 1. Validation Errors (400 Bad Request)
 
 **Scenario A**: Source text too short
+
 ```typescript
 {
   error: {
@@ -438,6 +475,7 @@ const generateFlashcardsSchema = z.object({
 ```
 
 **Scenario B**: Source text too long
+
 ```typescript
 {
   error: {
@@ -454,6 +492,7 @@ const generateFlashcardsSchema = z.object({
 ```
 
 **Scenario C**: Invalid JSON format
+
 ```typescript
 {
   error: {
@@ -467,6 +506,7 @@ const generateFlashcardsSchema = z.object({
 ```
 
 **Scenario D**: Missing required field
+
 ```typescript
 {
   error: {
@@ -482,6 +522,7 @@ const generateFlashcardsSchema = z.object({
 #### 2. Authentication Errors (401 Unauthorized)
 
 **Scenario A**: Missing Authorization header (Production)
+
 ```typescript
 {
   error: {
@@ -492,6 +533,7 @@ const generateFlashcardsSchema = z.object({
 ```
 
 **Scenario B**: Invalid or expired token (Production)
+
 ```typescript
 {
   error: {
@@ -506,6 +548,7 @@ const generateFlashcardsSchema = z.object({
 #### 3. Rate Limit Exceeded (429 Too Many Requests)
 
 **Scenario**: OpenRouter API returns 429
+
 ```typescript
 {
   error: {
@@ -520,6 +563,7 @@ const generateFlashcardsSchema = z.object({
 #### 4. AI Service Unavailable (503 Service Unavailable)
 
 **Scenario A**: OpenRouter API doesn't respond (timeout)
+
 ```typescript
 {
   error: {
@@ -530,6 +574,7 @@ const generateFlashcardsSchema = z.object({
 ```
 
 **Scenario B**: OpenRouter API returns 503
+
 ```typescript
 {
   error: {
@@ -544,6 +589,7 @@ const generateFlashcardsSchema = z.object({
 #### 5. AI Generation Failed (500 Internal Server Error)
 
 **Scenario A**: OpenRouter API returns malformed response structure
+
 ```typescript
 {
   error: {
@@ -554,6 +600,7 @@ const generateFlashcardsSchema = z.object({
 ```
 
 **Scenario B**: Error parsing AI response
+
 ```typescript
 {
   error: {
@@ -564,6 +611,7 @@ const generateFlashcardsSchema = z.object({
 ```
 
 **Scenario C**: Database write error
+
 ```typescript
 {
   error: {
@@ -574,6 +622,7 @@ const generateFlashcardsSchema = z.object({
 ```
 
 **Scenario D**: Missing OpenRouter API key
+
 ```typescript
 {
   error: {
@@ -588,17 +637,20 @@ const generateFlashcardsSchema = z.object({
 ### Error Logging Strategy
 
 #### What to Log to generation_error_logs
+
 - **Rate limiting errors** (429)
 - **Service unavailable errors** (503)
 - **AI parsing errors** (500)
 - **OpenRouter API errors** (4xx, 5xx)
 
 #### What NOT to Log
+
 - **Validation errors** (400) - User errors, not system errors
 - **Authentication errors** (401) - User auth issues
 - **Configuration errors** (missing API key) - Developer errors
 
 #### Error Log Record Structure
+
 ```typescript
 {
   user_id: string,               // DEFAULT_USER_ID in dev mode, real user ID in production
@@ -613,6 +665,7 @@ const generateFlashcardsSchema = z.object({
 ### Try-Catch Blocks
 
 #### Main Endpoint Function
+
 ```typescript
 try {
   // Authentication
@@ -627,6 +680,7 @@ try {
 ```
 
 #### Generation Service
+
 ```typescript
 try {
   // Call OpenRouter API
@@ -639,7 +693,7 @@ try {
   if (error.status === 503) {
     throw new ServiceUnavailableError();
   }
-  if (error.name === 'AbortError') {
+  if (error.name === "AbortError") {
     throw new ServiceUnavailableError();
   }
   throw new GenerationFailedError();
@@ -651,50 +705,60 @@ try {
 ### Potential Bottlenecks
 
 #### 1. OpenRouter API Call
+
 - **Problem**: Long response time (can take several seconds)
 - **Impact**: User waits for generation
 - **Metric**: `generation_duration` in database
 - **Mitigation**: 60-second timeout, async processing
 
 #### 2. AI Response Parsing
+
 - **Problem**: Large JSON responses to parse
 - **Impact**: Minimal (parsing is fast)
 
 #### 3. MD5 Hash Calculation
+
 - **Problem**: Hashing long texts (up to 10,000 characters)
 - **Impact**: Minimal (hashing is fast in Node.js)
 
 #### 4. Database Write
+
 - **Problem**: Network latency to Supabase
 - **Impact**: Minimal (single INSERT)
 
 ### Optimization Strategies
 
 #### 1. Timeout for API Call
+
 ```typescript
 const OPENROUTER_TIMEOUT = 60000; // 60 seconds
 ```
+
 - Set reasonable timeout for OpenRouter call
 - If exceeded, return 503 Service Unavailable
 - Prevents requests from hanging indefinitely
 
 #### 2. Asynchronous Processing
+
 - All I/O operations use async/await
 - Non-blocking execution
 - Better resource utilization
 
 #### 3. Connection Pooling (Supabase)
+
 - Supabase SDK automatically manages connection pooling
 - No additional configuration needed
 
 #### 4. Performance Monitoring
+
 - **Metric**: `generation_duration` in `generations` table
 - **Analytics**: Average generation time per model
 - **Alerts**: If average time > 10 seconds, investigate
 
 #### 5. Source Text Length Limit
+
 - **Current**: 10,000 characters
-- **Rationale**: 
+- **Rationale**:
   - Limits API costs (fewer tokens)
   - Reduces generation time
   - Decreases timeout risk
@@ -712,6 +776,7 @@ const OPENROUTER_TIMEOUT = 60000; // 60 seconds
 ### Phase 1: Structure and Types Preparation
 
 #### Step 1.1: Create Zod Schema for Validation
+
 **File**: `src/lib/schemas/generation.schemas.ts`
 
 ```typescript
@@ -733,6 +798,7 @@ export type GenerateFlashcardsInput = z.infer<typeof generateFlashcardsSchema>;
 ```
 
 #### Step 1.2: Create Custom Error Classes
+
 **File**: `src/lib/errors/generation.errors.ts`
 
 ```typescript
@@ -779,6 +845,7 @@ export class GenerationFailedError extends Error {
 ```
 
 #### Step 1.3: Create Hash Utility
+
 **File**: `src/lib/utils/hash.utils.ts`
 
 ```typescript
@@ -795,9 +862,11 @@ export function calculateMD5Hash(text: string): string {
 ### Phase 2: Generation Service Implementation
 
 #### Step 2.1: Create Generation Service
+
 **File**: `src/lib/services/generation.service.ts`
 
 This service integrates with the external AI service (OpenRouter) and handles:
+
 - AI flashcard generation
 - Database writes to `generations` table
 - Error logging to `generation_error_logs` table
@@ -805,11 +874,7 @@ This service integrates with the external AI service (OpenRouter) and handles:
 ```typescript
 import type { SupabaseClient } from "../../db/supabase.client";
 import type { FlashcardCandidateDto } from "../../types";
-import {
-  ServiceUnavailableError,
-  RateLimitError,
-  GenerationFailedError,
-} from "../errors/generation.errors";
+import { ServiceUnavailableError, RateLimitError, GenerationFailedError } from "../errors/generation.errors";
 import { calculateMD5Hash } from "../utils/hash.utils";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -860,10 +925,7 @@ Example output format:
 /**
  * Calls OpenRouter API to generate flashcard candidates
  */
-async function callOpenRouterAPI(
-  sourceText: string,
-  model: string
-): Promise<FlashcardCandidateDto[]> {
+async function callOpenRouterAPI(sourceText: string, model: string): Promise<FlashcardCandidateDto[]> {
   const apiKey = import.meta.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
@@ -913,10 +975,10 @@ async function callOpenRouterAPI(
     // Handle other HTTP errors
     if (!response.ok) {
       const errorText = await response.text();
-      throw new GenerationFailedError(
-        `OpenRouter API returned status ${response.status}`,
-        { status: response.status, body: errorText }
-      );
+      throw new GenerationFailedError(`OpenRouter API returned status ${response.status}`, {
+        status: response.status,
+        body: errorText,
+      });
     }
 
     const data: OpenRouterResponse = await response.json();
@@ -1061,12 +1123,12 @@ async function logGenerationError(
 
 /**
  * Main service function: Generates flashcards and saves generation to database
- * 
+ *
  * This function orchestrates the entire generation process:
  * 1. Calls OpenRouter API to generate flashcard candidates
  * 2. Saves successful generation to the database
  * 3. Returns generation result
- * 
+ *
  * In case of errors, the error is logged to generation_error_logs (handled by caller)
  */
 export async function generateFlashcards(
@@ -1140,18 +1202,14 @@ export async function generateFlashcards(
 ### Phase 3: API Endpoint Implementation
 
 #### Step 3.1: Create API Endpoint
+
 **File**: `src/pages/api/generations.ts`
 
 ```typescript
 export const prerender = false;
 
 import type { APIRoute } from "astro";
-import type {
-  GenerateFlashcardsCommand,
-  GenerationResponseDto,
-  ApiResponseDto,
-  ErrorResponseDto,
-} from "../../types";
+import type { GenerateFlashcardsCommand, GenerationResponseDto, ApiResponseDto, ErrorResponseDto } from "../../types";
 import { generateFlashcardsSchema } from "../../lib/schemas/generation.schemas";
 import { generateFlashcards } from "../../lib/services/generation.service";
 import {
@@ -1230,10 +1288,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
       candidates: result.candidates,
     };
 
-    return new Response(
-      JSON.stringify({ data: responseData } satisfies ApiResponseDto<GenerationResponseDto>),
-      { status: 201, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ data: responseData } satisfies ApiResponseDto<GenerationResponseDto>), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     // Return appropriate error response
     if (error instanceof UnauthorizedError) {
@@ -1302,6 +1360,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 ### Phase 4: Configuration and Environment Variables
 
 #### Step 4.1: Add Environment Variable to .env
+
 **File**: `.env` (local) and production configuration
 
 ```bash
@@ -1310,6 +1369,7 @@ OPENROUTER_API_KEY=your_api_key_here
 ```
 
 #### Step 4.2: Add Type to env.d.ts
+
 **File**: `src/env.d.ts`
 
 ```typescript
@@ -1328,12 +1388,15 @@ interface ImportMeta {
 ### Phase 5: Documentation and Finalization
 
 #### Step 5.1: Add JSDoc Comments to Key Functions
+
 Ensure all public functions have JSDoc comments
 
 #### Step 5.2: Update README (if exists)
+
 Add information about the new endpoint to project documentation
 
 #### Step 5.3: Code Review Checklist
+
 - [ ] Zod validation works correctly
 - [ ] All error scenarios are handled
 - [ ] Errors are logged to `generation_error_logs`

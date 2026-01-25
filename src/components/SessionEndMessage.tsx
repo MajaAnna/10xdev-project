@@ -6,10 +6,7 @@ interface SessionEndMessageProps {
   onGoToGenerator: () => void;
 }
 
-export const SessionEndMessage: React.FC<SessionEndMessageProps> = ({
-  onRestart,
-  onGoToGenerator,
-}) => {
+export const SessionEndMessage: React.FC<SessionEndMessageProps> = ({ onRestart, onGoToGenerator }) => {
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       <h2 className="text-2xl font-bold">Study Session Complete!</h2>
@@ -23,4 +20,3 @@ export const SessionEndMessage: React.FC<SessionEndMessageProps> = ({
     </div>
   );
 };
-

@@ -5,27 +5,33 @@ Copy and paste these curl commands into your terminal to test the endpoint.
 ## ✅ Success Cases
 
 ### 1. Default parameters (page=1, limit=20)
+
 ```bash
 curl -s http://localhost:4321/api/flashcards | jq .
 ```
 
 ### 2. Custom limit (limit=2)
+
 ```bash
 curl -s "http://localhost:4321/api/flashcards?limit=2" | jq .
 ```
 
 ### 3. Second page with custom limit (page=2, limit=2)
+
 ```bash
 curl -s "http://localhost:4321/api/flashcards?page=2&limit=2" | jq .
 ```
 
 ### 4. Large limit (limit=50)
+
 ```bash
 curl -s "http://localhost:4321/api/flashcards?limit=50" | jq .
 ```
 
 ### 5. Page beyond available data (page=100)
+
 **Expected**: Empty array, not an error
+
 ```bash
 curl -s "http://localhost:4321/api/flashcards?page=100" | jq .
 ```
@@ -35,26 +41,31 @@ curl -s "http://localhost:4321/api/flashcards?page=100" | jq .
 ## ❌ Error Cases (Should return 400 Bad Request)
 
 ### 6. Invalid page number (page=0)
+
 ```bash
 curl -s "http://localhost:4321/api/flashcards?page=0" | jq .
 ```
 
 ### 7. Invalid page number (page=-1)
+
 ```bash
 curl -s "http://localhost:4321/api/flashcards?page=-1" | jq .
 ```
 
 ### 8. Invalid limit - too large (limit=200, max is 100)
+
 ```bash
 curl -s "http://localhost:4321/api/flashcards?limit=200" | jq .
 ```
 
 ### 9. Invalid limit - zero (limit=0)
+
 ```bash
 curl -s "http://localhost:4321/api/flashcards?limit=0" | jq .
 ```
 
 ### 10. Invalid parameter type (page=abc)
+
 ```bash
 curl -s "http://localhost:4321/api/flashcards?page=abc" | jq .
 ```
@@ -79,6 +90,7 @@ echo "Test 6 (limit=200, error):" && curl -s "http://localhost:4321/api/flashcar
 ## 🔍 Response Format Reference
 
 ### Success Response (200 OK)
+
 ```json
 {
   "data": [
@@ -102,6 +114,7 @@ echo "Test 6 (limit=200, error):" && curl -s "http://localhost:4321/api/flashcar
 ```
 
 ### Error Response (400 Bad Request)
+
 ```json
 {
   "error": {
@@ -126,4 +139,3 @@ echo "Test 6 (limit=200, error):" && curl -s "http://localhost:4321/api/flashcar
 - **Flashcards are sorted**: Results are ordered by `created_at DESC` (newest first).
 - **Default values**: If no parameters are provided, defaults to `page=1` and `limit=20`.
 - **Maximum limit**: The maximum allowed limit is 100 flashcards per page.
-

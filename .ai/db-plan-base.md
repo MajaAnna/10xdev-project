@@ -24,42 +24,44 @@ CREATE TYPE flashcard_source AS ENUM (
 
 Primary table storing all user flashcards (both manually created and AI-generated).
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | BIGSERIAL | PRIMARY KEY | Unique identifier for the flashcard |
-| user_id | UUID | NOT NULL, REFERENCES auth.users(id) ON DELETE CASCADE | Owner of the flashcard |
-| generation_id | BIGINT | NULL, REFERENCES generations(id) ON DELETE CASCADE | Link to generation session (NULL for manual cards) |
-| front | VARCHAR(200) | NOT NULL | Question/term side of the flashcard |
-| back | VARCHAR(500) | NOT NULL | Answer/definition side of the flashcard |
-| source | flashcard_source | NOT NULL | Origin of the flashcard |
-| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Timestamp of creation |
-| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Timestamp of last update |
+| Column        | Type             | Constraints                                           | Description                                        |
+| ------------- | ---------------- | ----------------------------------------------------- | -------------------------------------------------- |
+| id            | BIGSERIAL        | PRIMARY KEY                                           | Unique identifier for the flashcard                |
+| user_id       | UUID             | NOT NULL, REFERENCES auth.users(id) ON DELETE CASCADE | Owner of the flashcard                             |
+| generation_id | BIGINT           | NULL, REFERENCES generations(id) ON DELETE CASCADE    | Link to generation session (NULL for manual cards) |
+| front         | VARCHAR(200)     | NOT NULL                                              | Question/term side of the flashcard                |
+| back          | VARCHAR(500)     | NOT NULL                                              | Answer/definition side of the flashcard            |
+| source        | flashcard_source | NOT NULL                                              | Origin of the flashcard                            |
+| created_at    | TIMESTAMPTZ      | NOT NULL, DEFAULT now()                               | Timestamp of creation                              |
+| updated_at    | TIMESTAMPTZ      | NOT NULL, DEFAULT now()                               | Timestamp of last update                           |
 
 **Constraints**:
+
 - `CHECK (length(trim(front)) > 0)`: Ensures front is not empty or whitespace-only
 - `CHECK (length(trim(back)) > 0)`: Ensures back is not empty or whitespace-only
 
-*Trigger: Automatically update `updated_at` column on record updates.*
+_Trigger: Automatically update `updated_at` column on record updates._
 
 ### 2.2. generations
 
 Logs each AI generation session for analytics and success metrics tracking.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | BIGSERIAL | PRIMARY KEY | Unique identifier for the generation session |
-| user_id | UUID | NOT NULL, REFERENCES auth.users(id) ON DELETE CASCADE | User who initiated the generation |
-| model | VARCHAR(50) | NOT NULL | AI model used for generation (e.g., "gpt-4", "claude-3") |
-| generation_duration | INT | NOT NULL | Duration of generation in milliseconds |
-| generated_count | INT | NOT NULL, DEFAULT 0 | Total number of flashcard candidates generated |
-| accepted_unedited_count | INT | NULLABLE, DEFAULT 0 | Number of candidates accepted without editing |
-| accepted_edited_count | INT | NULLABLE, DEFAULT 0 | Number of candidates accepted after editing |
-| source_text_hash | VARCHAR(64) | NOT NULL | SHA-256 hash of the source text for deduplication |
-| source_text_length | INT | NOT NULL | Length of the source text in characters |
-| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Timestamp of generation |
-| updated_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Timestamp of last update |
+| Column                  | Type        | Constraints                                           | Description                                              |
+| ----------------------- | ----------- | ----------------------------------------------------- | -------------------------------------------------------- |
+| id                      | BIGSERIAL   | PRIMARY KEY                                           | Unique identifier for the generation session             |
+| user_id                 | UUID        | NOT NULL, REFERENCES auth.users(id) ON DELETE CASCADE | User who initiated the generation                        |
+| model                   | VARCHAR(50) | NOT NULL                                              | AI model used for generation (e.g., "gpt-4", "claude-3") |
+| generation_duration     | INT         | NOT NULL                                              | Duration of generation in milliseconds                   |
+| generated_count         | INT         | NOT NULL, DEFAULT 0                                   | Total number of flashcard candidates generated           |
+| accepted_unedited_count | INT         | NULLABLE, DEFAULT 0                                   | Number of candidates accepted without editing            |
+| accepted_edited_count   | INT         | NULLABLE, DEFAULT 0                                   | Number of candidates accepted after editing              |
+| source_text_hash        | VARCHAR(64) | NOT NULL                                              | SHA-256 hash of the source text for deduplication        |
+| source_text_length      | INT         | NOT NULL                                              | Length of the source text in characters                  |
+| created_at              | TIMESTAMPTZ | NOT NULL, DEFAULT now()                               | Timestamp of generation                                  |
+| updated_at              | TIMESTAMPTZ | NOT NULL, DEFAULT now()                               | Timestamp of last update                                 |
 
 **Constraints**:
+
 - `CHECK (source_text_length >= 100 AND source_text_length <= 10000)`: Enforces PRD text length limits
 - `CHECK (generated_count >= 0)`: Ensures non-negative count
 - `CHECK (accepted_unedited_count >= 0)`: Ensures non-negative count
@@ -70,18 +72,19 @@ Logs each AI generation session for analytics and success metrics tracking.
 
 Records errors during AI generation for debugging and monitoring.
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | BIGSERIAL | PRIMARY KEY | Unique identifier for the error log |
-| user_id | UUID | NOT NULL, REFERENCES auth.users(id) ON DELETE CASCADE | User who experienced the error |
-| model | VARCHAR(50) | NOT NULL | AI model that was attempted |
-| source_text_hash | VARCHAR(64) |  NOT NULL | SHA-256 hash of the source text |
-| source_text_length | INT | NOT NULL | Length of the source text in characters |
-| error_code | VARCHAR(100) | NOT NULL | Error code from the AI service |
-| error_message | TEXT | NOT NULL | Detailed error message |
-| created_at | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Timestamp when error occurred |
+| Column             | Type         | Constraints                                           | Description                             |
+| ------------------ | ------------ | ----------------------------------------------------- | --------------------------------------- |
+| id                 | BIGSERIAL    | PRIMARY KEY                                           | Unique identifier for the error log     |
+| user_id            | UUID         | NOT NULL, REFERENCES auth.users(id) ON DELETE CASCADE | User who experienced the error          |
+| model              | VARCHAR(50)  | NOT NULL                                              | AI model that was attempted             |
+| source_text_hash   | VARCHAR(64)  | NOT NULL                                              | SHA-256 hash of the source text         |
+| source_text_length | INT          | NOT NULL                                              | Length of the source text in characters |
+| error_code         | VARCHAR(100) | NOT NULL                                              | Error code from the AI service          |
+| error_message      | TEXT         | NOT NULL                                              | Detailed error message                  |
+| created_at         | TIMESTAMPTZ  | NOT NULL, DEFAULT now()                               | Timestamp when error occurred           |
 
 **Constraints**:
+
 - `CHECK (source_text_length >= 100 AND source_text_length <= 10000)`: Enforces PRD text length limits
 
 ## 3. Relationships
@@ -132,25 +135,25 @@ generations
 
 ```sql
 -- Optimize listing user's flashcards (most common query)
-CREATE INDEX idx_flashcards_user_created 
+CREATE INDEX idx_flashcards_user_created
 ON flashcards(user_id, created_at DESC);
 
 -- Optimize finding flashcards by generation
-CREATE INDEX idx_flashcards_generation 
-ON flashcards(generation_id) 
+CREATE INDEX idx_flashcards_generation
+ON flashcards(generation_id)
 WHERE generation_id IS NOT NULL;
 
 -- Optimize user generations lookup
-CREATE INDEX idx_generations_user_created 
+CREATE INDEX idx_generations_user_created
 ON generations(user_id, created_at DESC);
 
 -- Optimize error logs lookup by user
-CREATE INDEX idx_generation_error_logs_user 
+CREATE INDEX idx_generation_error_logs_user
 ON generation_error_logs(user_id, created_at DESC);
 
 -- Optimize deduplication checks by hash
-CREATE INDEX idx_generations_hash 
-ON generations(user_id, source_text_hash) 
+CREATE INDEX idx_generations_hash
+ON generations(user_id, source_text_hash)
 WHERE source_text_hash IS NOT NULL;
 ```
 
@@ -263,7 +266,8 @@ WITH CHECK (auth.uid() = user_id);
 
 **Decision**: Define `flashcard_source` as PostgreSQL ENUM type.
 
-**Rationale**: 
+**Rationale**:
+
 - Ensures data integrity at the database level
 - Prevents invalid source values
 - Required for tracking AI adoption metrics (PRD Section 6.2)
@@ -274,6 +278,7 @@ WITH CHECK (auth.uid() = user_id);
 **Decision**: Allow `generation_id` to be NULL in the `flashcards` table.
 
 **Rationale**:
+
 - Supports both AI-generated and manually created flashcards
 - Manual flashcards (US-006) have no associated generation session
 - Maintains data integrity while allowing flexible flashcard creation
@@ -283,6 +288,7 @@ WITH CHECK (auth.uid() = user_id);
 **Decision**: Use `VARCHAR(200)` for front, `VARCHAR(500)` for back.
 
 **Rationale**:
+
 - Enforces PRD requirements (US-013) at database level
 - Provides additional validation layer beyond application logic
 - Prevents data inconsistencies
@@ -293,6 +299,7 @@ WITH CHECK (auth.uid() = user_id);
 **Decision**: Maintain separate tables for successful generations and errors.
 
 **Rationale**:
+
 - Successful generations have different data needs (counts, relationships)
 - Error logs are immutable audit trails
 - Simplifies queries and analytics
@@ -303,6 +310,7 @@ WITH CHECK (auth.uid() = user_id);
 **Decision**: Use `VARCHAR(64)` for `source_text_hash`.
 
 **Rationale**:
+
 - SHA-256 produces 64 hexadecimal characters
 - Enables deduplication without storing full source text
 - Improves privacy (source text not stored)
@@ -313,6 +321,7 @@ WITH CHECK (auth.uid() = user_id);
 **Decision**: Implement `ON DELETE CASCADE` for user and generation relationships.
 
 **Rationale**:
+
 - Ensures referential integrity
 - Simplifies user account deletion (GDPR compliance)
 - Prevents orphaned records
@@ -323,6 +332,7 @@ WITH CHECK (auth.uid() = user_id);
 **Decision**: Create composite index on `flashcards(user_id, created_at DESC)`.
 
 **Rationale**:
+
 - Optimizes most common query: listing user's flashcards chronologically (US-007)
 - Supports efficient pagination
 - DESC order matches display requirements (newest first)
@@ -332,6 +342,7 @@ WITH CHECK (auth.uid() = user_id);
 **Decision**: Set `DEFAULT 0` for all counter columns.
 
 **Rationale**:
+
 - Simplifies application logic (no need to explicitly set to 0)
 - Ensures counters are never NULL
 - Facilitates aggregation queries
@@ -342,6 +353,7 @@ WITH CHECK (auth.uid() = user_id);
 **Decision**: Implement full CRUD policies for all tables.
 
 **Rationale**:
+
 - Enforces security at database level (defense in depth)
 - Prevents data leaks even if application logic has bugs
 - Required by PRD Section 3.6 (Security requirements)
@@ -352,6 +364,7 @@ WITH CHECK (auth.uid() = user_id);
 **Decision**: Create single `moddatetime()` function for all tables.
 
 **Rationale**:
+
 - DRY principle (Don't Repeat Yourself)
 - Easier to maintain and test
 - Consistent behavior across all tables
@@ -378,6 +391,7 @@ WITH CHECK (auth.uid() = user_id);
 ### 8.3. Data Validation
 
 The schema enforces validation at multiple levels:
+
 - **Database level**: CHECK constraints, NOT NULL, FOREIGN KEY
 - **Application level**: Additional validation in API endpoints (PRD Section 3.6)
 - **UI level**: Character counters and input validation (US-013)
@@ -402,6 +416,7 @@ The schema directly supports PRD success metrics:
 ### Metric 6.1: AI Generation Quality (75% acceptance rate)
 
 **Supported by**:
+
 - `generations.generated_count`: Total candidates produced
 - `generations.accepted_unedited_count`: Direct acceptances
 - `generations.accepted_edited_count`: Edited acceptances
@@ -410,10 +425,12 @@ The schema directly supports PRD success metrics:
 ### Metric 6.2: AI Adoption (75% of flashcards from AI)
 
 **Supported by**:
+
 - `flashcards.source`: Tracks origin of each flashcard
-- **Query**: 
+- **Query**:
+
 ```sql
-SELECT 
+SELECT
     COUNT(*) FILTER (WHERE source IN ('ai_generated', 'ai_generated_edited')) * 100.0 / COUNT(*) as ai_adoption_rate
 FROM flashcards;
 ```
@@ -423,5 +440,3 @@ FROM flashcards;
 **Schema Version**: 1.0.0  
 **Last Updated**: 2025-11-26  
 **Status**: Ready for Implementation
-
-

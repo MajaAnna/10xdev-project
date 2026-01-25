@@ -22,35 +22,35 @@ The application provides a full workflow, including a review system for AI-gener
 
 This project uses a modern, performant, and scalable tech stack:
 
--   **Frontend:**
-    -   [Astro](https://astro.build/): High-performance web framework for content-driven sites.
-    -   [React](https://react.dev/): UI library for building interactive components.
-    -   [TypeScript](https://www.typescriptlang.org/): Static typing for robust and maintainable code.
-    -   [Tailwind CSS](https://tailwindcss.com/): A utility-first CSS framework for rapid styling.
-    -   [Shadcn/ui](https://ui.shadcn.com/): A library of accessible and reusable React components.
+- **Frontend:**
+  - [Astro](https://astro.build/): High-performance web framework for content-driven sites.
+  - [React](https://react.dev/): UI library for building interactive components.
+  - [TypeScript](https://www.typescriptlang.org/): Static typing for robust and maintainable code.
+  - [Tailwind CSS](https://tailwindcss.com/): A utility-first CSS framework for rapid styling.
+  - [Shadcn/ui](https://ui.shadcn.com/): A library of accessible and reusable React components.
 
--   **Backend & Database:**
-    -   [Supabase](https://supabase.com/): An open-source Firebase alternative providing a PostgreSQL database, authentication, and a Backend-as-a-Service platform.
+- **Backend & Database:**
+  - [Supabase](https://supabase.com/): An open-source Firebase alternative providing a PostgreSQL database, authentication, and a Backend-as-a-Service platform.
 
--   **Artificial Intelligence:**
-    -   [OpenRouter.ai](https://openrouter.ai/): A unified API for accessing a wide range of large language models (from OpenAI, Anthropic, Google, etc.), enabling flexibility and cost optimization.
+- **Artificial Intelligence:**
+  - [OpenRouter.ai](https://openrouter.ai/): A unified API for accessing a wide range of large language models (from OpenAI, Anthropic, Google, etc.), enabling flexibility and cost optimization.
 
--   **DevOps & Hosting:**
-    -   [GitHub Actions](https://github.com/features/actions): For continuous integration and deployment pipelines.
-    -   [Docker](https://www.docker.com/): For containerizing the application for consistent deployments.
-    -   [DigitalOcean](https://www.digitalocean.com/): For hosting the production application.
+- **DevOps & Hosting:**
+  - [GitHub Actions](https://github.com/features/actions): For continuous integration and deployment pipelines.
+  - [Docker](https://www.docker.com/): For containerizing the application for consistent deployments.
+  - [DigitalOcean](https://www.digitalocean.com/): For hosting the production application.
 
 ## Project Structure
 
 ```md
 .
 ├── src/
-│   ├── layouts/    # Astro layouts
-│   ├── pages/      # Astro pages
-│   │   └── api/    # API endpoints
-│   ├── components/ # UI components (Astro & React)
-│   └── assets/     # Static assets
-├── public/         # Public assets
+│ ├── layouts/ # Astro layouts
+│ ├── pages/ # Astro pages
+│ │ └── api/ # API endpoints
+│ ├── components/ # UI components (Astro & React)
+│ └── assets/ # Static assets
+├── public/ # Public assets
 ```
 
 ## AI Development Support
@@ -68,15 +68,14 @@ This project is configured with AI development tools to enhance the development 
 
 The project includes AI rules in `.cursor/rules/` directory that help Cursor IDE understand the project structure and provide better code suggestions.
 
-
 ## Getting Started Locally
 
 To set up and run this project on your local machine, follow these steps.
 
 ### Prerequisites
 
--   Node.js: The required version is specified in the `.nvmrc` file. We recommend using [nvm](https://github.com/nvm-sh/nvm) (Node Version Manager) to manage Node.js versions.
--   npm (or a compatible package manager like pnpm or yarn).
+- Node.js: The required version is specified in the `.nvmrc` file. We recommend using [nvm](https://github.com/nvm-sh/nvm) (Node Version Manager) to manage Node.js versions.
+- npm (or a compatible package manager like pnpm or yarn).
 
 ### 1. Clone the Repository
 
@@ -134,32 +133,32 @@ The application should now be running at `http://localhost:4321`.
 
 The following scripts are available in `package.json`:
 
-| Script       | Description                                          |
-| :----------- | :--------------------------------------------------- |
-| `npm run dev`    | Starts the local development server with hot-reloading. |
-| `npm run build`  | Builds the application for production.               |
-| `npm run preview`| Previews the production build locally.               |
-| `npm run lint`   | Lints the codebase using ESLint.                     |
-| `npm run lint:fix`| Automatically fixes fixable linting errors.          |
-| `npm run format` | Formats the entire codebase using Prettier.          |
+| Script             | Description                                             |
+| :----------------- | :------------------------------------------------------ |
+| `npm run dev`      | Starts the local development server with hot-reloading. |
+| `npm run build`    | Builds the application for production.                  |
+| `npm run preview`  | Previews the production build locally.                  |
+| `npm run lint`     | Lints the codebase using ESLint.                        |
+| `npm run lint:fix` | Automatically fixes fixable linting errors.             |
+| `npm run format`   | Formats the entire codebase using Prettier.             |
 
 ## Project Scope
 
 ### Key Features (MVP)
 
--   **AI Flashcard Generation:** Generate flashcards from pasted text.
--   **Review System:** Accept, edit, or reject AI-generated suggestions before saving.
--   **Manual Creation:** Manually create and edit flashcards.
--   **User Accounts:** Secure user accounts for storing and managing flashcards.
--   **Simple Learning Mode:** A basic interface to review saved flashcards.
+- **AI Flashcard Generation:** Generate flashcards from pasted text.
+- **Review System:** Accept, edit, or reject AI-generated suggestions before saving.
+- **Manual Creation:** Manually create and edit flashcards.
+- **User Accounts:** Secure user accounts for storing and managing flashcards.
+- **Simple Learning Mode:** A basic interface to review saved flashcards.
 
 ### Out of Scope (for now)
 
--   Advanced spaced repetition algorithms (e.g., SM-2).
--   Importing from file formats like PDF or DOCX.
--   Sharing flashcard decks between users.
--   Integrations with other educational platforms.
--   Native mobile applications (iOS/Android).
+- Advanced spaced repetition algorithms (e.g., SM-2).
+- Importing from file formats like PDF or DOCX.
+- Sharing flashcard decks between users.
+- Integrations with other educational platforms.
+- Native mobile applications (iOS/Android).
 
 ## Project Status
 

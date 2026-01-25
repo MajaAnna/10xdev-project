@@ -15,17 +15,20 @@ Głównym problemem, który rozwiązuje aplikacja, jest fakt, że manualne tworz
 ## 3. Wymagania funkcjonalne
 
 ### 3.0. Dostęp i Autentykacja
+
 - Aplikacja jest przeznaczona wyłącznie dla zarejestrowanych i zalogowanych użytkowników.
 - Niezalogowany użytkownik ma dostęp jedynie do stron rejestracji i logowania.
 - Próba dostępu do jakiejkolwiek innej strony aplikacji bez uwierzytelnienia skutkuje przekierowaniem do panelu logowania.
 
 ### 3.1. Generator Fiszki z AI
+
 - Użytkownik może wkleić w dedykowane pole tekst o długości od 100 do 10 000 znaków.
 - Na podstawie wklejonego tekstu, system generuje listę "kandydatów na fiszki".
 - Każdy kandydat składa się z "przodu" (pytanie, termin) o maksymalnej długości 200 znaków i "tyłu" (odpowiedź, definicja) o maksymalnej długości 500 znaków.
 - Wygenerowani kandydaci nie są automatycznie zapisywani w bazie danych; wymagają recenzji użytkownika.
 
 ### 3.2. System Recenzji Kandydatów
+
 - Po wygenerowaniu, kandydaci na fiszki są prezentowani w formie listy.
 - Użytkownik ma możliwość masowej akceptacji wszystkich kandydatów jednym przyciskiem.
 - Każdy kandydat na liście może być indywidualnie usunięty (odrzucony).
@@ -33,29 +36,34 @@ Głównym problemem, który rozwiązuje aplikacja, jest fakt, że manualne tworz
 - Fiszka jest zapisywana w bazie danych dopiero po jawnej akcji użytkownika (akceptacja lub edycja i akceptacja).
 
 ### 3.3. Zarządzanie Fiszami
+
 - Użytkownicy mogą tworzyć fiszki ręcznie za pomocą prostego formularza (przód/tył).
 - Wszystkie zapisane fiszki (zarówno te stworzone ręcznie, jak i te zaakceptowane od AI) trafiają na jedną, wspólną listę w widoku "My cards".
 - Lista fiszek jest sortowana chronologicznie (od najnowszej do najstarszej).
 - Każda zapisana fiszka może być edytowana lub usunięta przez użytkownika.
 
 ### 3.4. Tryb Nauki
+
 - Aplikacja oferuje prosty tryb nauki.
 - Użytkownikowi prezentowany jest "przód" fiszki.
 - Po kliknięciu przycisku "Sprawdź odpowiedź", odsłaniany jest "tył" fiszki.
 - Użytkownik ocenia swoją znajomość odpowiedzi za pomocą 2 przycisków: "Don't know", "Know". Oceny te będą w przyszłości wykorzystywane przez algorytm powtórek.
 
 ### 3.5. System Kont Użytkowników
+
 - Aplikacja będzie posiadać prosty system uwierzytelniania oparty na adresie e-mail i haśle.
 - Każdy użytkownik ma dostęp wyłącznie do własnych fiszek.
 - Implementacja tej funkcjonalności jest zaplanowana na późniejszy etap projektu.
 
 ### 3.6. Wymagania Techniczne i Bezpieczeństwo
+
 - Backend i baza danych zostaną oparte o platformę Supabase.
 - Zostaną zaimplementowane standardowe praktyki bezpieczeństwa, w tym uwierzytelnianie, autoryzacja na poziomie wiersza (RLS) oraz walidacja danych wejściowych.
 
 ## 4. Granice produktu
 
 Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
+
 - Implementacja własnego, zaawansowanego algorytmu powtórek (jak np. algorytm SM-2 z SuperMemo lub Anki).
 - Import fiszek z plików w różnych formatach (np. PDF, DOCX, CSV).
 - Funkcje społecznościowe, takie jak współdzielenie talii (decków) fiszek między użytkownikami.
@@ -66,6 +74,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
 ## 5. Historyjki użytkowników
 
 ### US-001
+
 - Tytuł: Generowanie kandydatów na fiszki z podanego tekstu
 - Opis: Jako użytkownik, chcę wkleić tekst (np. notatki z wykładu) i otrzymać listę propozycji fiszek wygenerowanych przez AI, aby zaoszczędzić czas na ich ręcznym tworzeniu.
 - Kryteria akceptacji:
@@ -77,6 +86,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   6. Kandydaci nie są zapisywani w bazie danych na tym etapie.
 
 ### US-002
+
 - Tytuł: Przeglądanie listy kandydatów na fiszki
 - Opis: Jako użytkownik, po wygenerowaniu fiszek przez AI, chcę zobaczyć listę kandydatów, aby móc zdecydować, które z nich zapisać.
 - Kryteria akceptacji:
@@ -87,6 +97,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   5. Nad listą znajduje się przycisk "Accept all".
 
 ### US-003
+
 - Tytuł: Odrzucenie (usunięcie) kandydata na fiszkę
 - Opis: Jako użytkownik, chcę mieć możliwość usunięcia niechcianego kandydata z listy propozycji, aby nie zaśmiecał mojej kolekcji.
 - Kryteria akceptacji:
@@ -95,6 +106,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   3. Usunięty kandydat nie jest zapisywany w bazie danych.
 
 ### US-004
+
 - Tytuł: Edycja i akceptacja pojedynczego kandydata
 - Opis: Jako użytkownik, chcę mieć możliwość edycji treści kandydata na fiszkę przed jego zaakceptowaniem, aby upewnić się, że jest poprawny i zgodny z moimi oczekiwaniami.
 - Kryteria akceptacji:
@@ -105,6 +117,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   5. Po zapisaniu, kandydat znika z listy recenzji.
 
 ### US-005
+
 - Tytuł: Masowa akceptacja wszystkich kandydatów
 - Opis: Jako użytkownik, chcę mieć możliwość zaakceptowania wszystkich wygenerowanych kandydatów jednym kliknięciem, jeśli uznam, że większość z nich jest dobra.
 - Kryteria akceptacji:
@@ -113,6 +126,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   3. Po zakończeniu operacji lista kandydatów staje się pusta.
 
 ### US-006
+
 - Tytuł: Ręczne tworzenie nowej fiszki
 - Opis: Jako użytkownik, chcę mieć możliwość ręcznego dodania nowej fiszki, gdy mam konkretne pytanie i odpowiedź do zapamiętania.
 - Kryteria akceptacji:
@@ -122,6 +136,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   4. Formularz jest czyszczony po pomyślnym dodaniu fiszki.
 
 ### US-007
+
 - Tytuł: Przeglądanie kolekcji zapisanych fiszek
 - Opis: Jako użytkownik, chcę mieć dostęp do listy wszystkich moich zapisanych fiszek, aby móc je przeglądać i zarządzać nimi.
 - Kryteria akceptacji:
@@ -130,6 +145,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   3. Przy każdej fiszce znajdują się opcje "Edit" i "Delete".
 
 ### US-008
+
 - Tytuł: Edycja istniejącej fiszki
 - Opis: Jako użytkownik, chcę móc edytować moje zapisane fiszki, aby poprawić błędy lub zaktualizować informacje.
 - Kryteria akceptacji:
@@ -138,6 +154,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   3. Historia edycji nie jest śledzona.
 
 ### US-009
+
 - Tytuł: Usuwanie fiszki z kolekcji
 - Opis: Jako użytkownik, chcę móc trwale usunąć fiszkę z mojej kolekcji, gdy nie jest mi już potrzebna.
 - Kryteria akceptacji:
@@ -145,6 +162,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   2. Po potwierdzeniu, fiszka jest trwale usuwana z bazy danych.
 
 ### US-010
+
 - Tytuł: Nauka z wykorzystaniem fiszek
 - Opis: Jako użytkownik, chcę móc uczyć się z moich fiszek w prostym trybie, który pozwala mi ocenić moją znajomość odpowiedzi.
 - Kryteria akceptacji:
@@ -154,6 +172,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   4. Kliknięcie jednego z przycisków powoduje przejście do następnej fiszki.
 
 ### US-011
+
 - Tytuł: Tworzenie nowego konta użytkownika
 - Opis: Jako nowy użytkownik, chcę móc zarejestrować się w aplikacji za pomocą adresu e-mail i hasła, aby móc zapisywać swoje fiszki.
 - Kryteria akceptacji:
@@ -164,6 +183,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   5. Hasło jest przechowywane w bazie w postaci zaszyfrowanej.
 
 ### US-012
+
 - Tytuł: Logowanie do aplikacji
 - Opis: Jako zarejestrowany użytkownik, chcę móc zalogować się do aplikacji, aby uzyskać dostęp do moich fiszek.
 - Kryteria akceptacji:
@@ -173,6 +193,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   4. Dostęp do danych jest ograniczony tylko do zalogowanego użytkownika (RLS).
 
 ### US-013
+
 - Tytuł: Walidacja limitów znaków
 - Opis: Jako użytkownik, powinienem być informowany o limitach znaków w polach tekstowych, aby uniknąć błędów.
 - Kryteria akceptacji:
@@ -181,6 +202,7 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
   3. Interfejs wyświetla licznik znaków lub komunikat przy próbie przekroczenia limitu.
 
 ### US-014
+
 - Tytuł: Obsługa błędów podczas generowania fiszek
 - Opis: Jako użytkownik, w przypadku problemów z generowaniem fiszek przez AI, chcę otrzymać zrozumiały komunikat o błędzie.
 - Kryteria akceptacji:
@@ -191,11 +213,13 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
 ## 6. Metryki sukcesu
 
 ### 6.1. Jakość generowania AI
+
 - Cel: 75% fiszek wygenerowanych przez AI jest akceptowanych przez użytkownika (z edycją lub bez).
 - Sposób pomiaru: Wprowadzona zostanie dedykowana tabela `generation_logs`, która będzie śledzić każdą sesję generowania. Będziemy analizować stosunek liczby kandydatów, które zostały zaakceptowane (bezpośrednio lub po edycji) do całkowitej liczby kandydatów wygenerowanych w danej sesji.
 - Wzór: `(Liczba zaakceptowanych fiszek + Liczba edytowanych i zaakceptowanych fiszek) / Całkowita liczba wygenerowanych kandydatów >= 0.75`
 
 ### 6.2. Adopcja funkcji AI
+
 - Cel: Użytkownicy tworzą 75% wszystkich swoich fiszek z wykorzystaniem generatora AI.
 - Sposób pomiaru: Każda fiszka w bazie danych będzie miała pole `source` przechowujące informację o jej pochodzeniu (`manual`, `ai_generated`, `ai_generated_edited`). Metryka będzie obliczana jako stosunek liczby fiszek pochodzących z AI do całkowitej liczby fiszek w systemie.
 - Wzór: `Liczba fiszek ze statusem 'ai_generated' lub 'ai_generated_edited' / Całkowita liczba fiszek w systemie >= 0.75`

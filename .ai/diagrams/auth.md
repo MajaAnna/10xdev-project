@@ -1,4 +1,5 @@
 <authentication_analysis>
+
 ### 1. Przepływy Uwierzytelniania
 
 Na podstawie dostarczonych dokumentów, zidentyfikowano następujące przepływy uwierzytelniania:
@@ -13,7 +14,7 @@ Na podstawie dostarczonych dokumentów, zidentyfikowano następujące przepływy
 ### 2. Główni Aktorzy i Ich Interakcje
 
 - **Przeglądarka (Browser/React):** Aktor inicjujący. Renderuje interfejs użytkownika (formularze logowania/rejestracji/odzyskiwania hasła) i wysyła żądania do Astro API. Komunikuje się z użytkownikiem i zarządza przekierowaniami po stronie klienta.
-- **Middleware (Astro):** Centralny strażnik aplikacji. Przechwytuje *każde* żądanie. Odpowiada za ochronę tras (sprawdzanie, czy użytkownik jest zalogowany) i zarządzanie sesją na poziomie serwera poprzez odczyt i weryfikację ciasteczek.
+- **Middleware (Astro):** Centralny strażnik aplikacji. Przechwytuje _każde_ żądanie. Odpowiada za ochronę tras (sprawdzanie, czy użytkownik jest zalogowany) i zarządzanie sesją na poziomie serwera poprzez odczyt i weryfikację ciasteczek.
 - **Astro API (`/pages/api/auth/*`):** Backend dla frontendu (BFF). Obsługuje logikę biznesową uwierzytelniania (logowanie, rejestracja, wylogowanie, odzyskiwanie hasła). Działa jako pośrednik między przeglądarką a Supabase Auth, nigdy nie ujawniając kluczy serwisowych klientowi.
 - **Supabase Auth:** Usługa zewnętrzna, która jest "źródłem prawdy" na temat tożsamości użytkownika. Zarządza bazą danych użytkowników, hasłami, wystawianiem i weryfikacją tokenów JWT (Access Token, Refresh Token) oraz obsługuje mechanizmy takie jak bezpieczne logowanie i wysyłanie e-maili.
 - **Email Service (Serwis Email):** Odpowiedzialny za wysyłanie wiadomości e-mail w procesach rejestracji (potwierdzenie) i odzyskiwania hasła (link resetujący).
@@ -27,7 +28,7 @@ Na podstawie dostarczonych dokumentów, zidentyfikowano następujące przepływy
 ### 4. Opis Kroków Autentykacji (Szczegóły)
 
 1.  **Żądanie dostępu:** Użytkownik wpisuje w przeglądarce adres chronionej strony.
-2.  **Przechwycenie przez Middleware:** Middleware Astro przechwytuje żądanie *przed* renderowaniem strony.
+2.  **Przechwycenie przez Middleware:** Middleware Astro przechwytuje żądanie _przed_ renderowaniem strony.
 3.  **Sprawdzenie Ciasteczek:** Middleware sprawdza obecność ciasteczek sesji (`sb-access-token`, `sb-refresh-token`).
 4.  **Logika warunkowa w Middleware:**
     - **Brak ciasteczek:** Przekierowanie (`307 Temporary Redirect`) do `/auth/login`. Koniec przepływu.
@@ -39,8 +40,9 @@ Na podstawie dostarczonych dokumentów, zidentyfikowano następujące przepływy
 6.  **Zezwolenie na dostęp:** Middleware umieszcza dane użytkownika w `Astro.locals.user` i przekazuje żądanie dalej (`next()`).
 7.  **Renderowanie strony:** Strona Astro jest renderowana na serwerze, mając dostęp do danych zalogowanego użytkownika poprzez `Astro.locals.user`, co pozwala na personalizację UI (np. wyświetlenie avatara w `TopNav`).
 8.  **Odpowiedź do przeglądarki:** Wyrenderowana strona HTML (wraz z ewentualnie zaktualizowanymi ciasteczkami sesji) jest wysyłana do przeglądarki.
-</authentication_analysis>
-<mermaid_diagram>
+    </authentication_analysis>
+    <mermaid_diagram>
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -171,4 +173,5 @@ sequenceDiagram
     deactivate AstroAPI
     Browser->>Browser: Przekierowanie do /auth/login
 ```
+
 </mermaid_diagram>

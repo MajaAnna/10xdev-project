@@ -1,9 +1,11 @@
 # API Endpoint Implementation Plan: Update Flashcard
 
 ## 1. Endpoint Overview
+
 This document describes the implementation plan for the `PATCH /api/flashcards/:id` endpoint. Its purpose is to allow users to update the content (`front` and/or `back`) of an existing flashcard. The endpoint will automatically update the `source` field if an AI-generated flashcard is modified, and ensure that users can only modify their own resources.
 
 ## 2. Request Details
+
 - **HTTP Method:** `PATCH`
 - **URL Structure:** `/api/flashcards/[id]`
 - **Parameters:**
@@ -18,31 +20,37 @@ This document describes the implementation plan for the `PATCH /api/flashcards/:
     "back": "New answer content."
   }
   ```
-  *Note: At least one of the fields (`front` or `back`) must be present in the request body.*
+  _Note: At least one of the fields (`front` or `back`) must be present in the request body._
 
 ## 3. Used Types
 
 ### `UpdateFlashcardSchema` (Zod)
-Validation schema for the request body, to be defined in `@src/lib/schemas/flashcard.schemas.ts`.
-```typescript
-import { z } from 'zod';
 
-export const UpdateFlashcardSchema = z.object({
-  front: z.string().trim().min(1, "Front cannot be empty").max(200, "Front cannot exceed 200 characters").optional(),
-  back: z.string().trim().min(1, "Back cannot be empty").max(500, "Back cannot exceed 500 characters").optional(),
-}).refine(data => data.front !== undefined || data.back !== undefined, {
-  message: "At least one field (front or back) must be provided",
-  path: ["front", "back"], // Points to the fields related to the error
-});
+Validation schema for the request body, to be defined in `@src/lib/schemas/flashcard.schemas.ts`.
+
+```typescript
+import { z } from "zod";
+
+export const UpdateFlashcardSchema = z
+  .object({
+    front: z.string().trim().min(1, "Front cannot be empty").max(200, "Front cannot exceed 200 characters").optional(),
+    back: z.string().trim().min(1, "Back cannot be empty").max(500, "Back cannot exceed 500 characters").optional(),
+  })
+  .refine((data) => data.front !== undefined || data.back !== undefined, {
+    message: "At least one field (front or back) must be provided",
+    path: ["front", "back"], // Points to the fields related to the error
+  });
 
 export type UpdateFlashcardDto = z.infer<typeof UpdateFlashcardSchema>;
 ```
 
 ### Database Types
+
 - `Flashcard`: `Tables<'flashcards'>` from `@src/db/database.types.ts`
 - `FlashcardSource`: `Enums<'flashcard_source'>` from `@src/db/database.types.ts`
 
 ## 4. Response Details
+
 - **200 OK:** Returns the full, updated flashcard object.
   ```json
   {
@@ -64,6 +72,7 @@ export type UpdateFlashcardDto = z.infer<typeof UpdateFlashcardSchema>;
 - **500 Internal Server Error:** Internal server error.
 
 ## 5. Data Flow
+
 1. A `PATCH` request arrives at the Astro endpoint `src/pages/api/flashcards.ts`.
 2. Astro middleware verifies the JWT token and places user data in `context.locals`.
 3. The `PATCH` handler extracts the `id` from URL parameters and the request body.
@@ -79,23 +88,28 @@ export type UpdateFlashcardDto = z.infer<typeof UpdateFlashcardSchema>;
 8. In case of errors (e.g., `NotFoundError`), they are caught by the global error handler and mapped to appropriate HTTP status codes.
 
 ## 6. Security Considerations
+
 - **Authentication:** The endpoint will be protected by middleware that checks the validity of the JWT token (`Authorization: Bearer <token>`). Unauthorized requests will be rejected with a 401 code.
 - **Authorization:** The service logic must ensure that a user can only modify their own flashcards. Every database query must include a `where('user_id', '=', userId)` condition.
 - **Data Validation:** Using Zod for request body validation prevents injection attacks and ensures data consistency by rejecting invalid formats and lengths.
 
 ## 7. Error Handling
+
 Errors will be handled using custom error classes from `@src/lib/errors/common.errors.ts`, ensuring consistent API responses.
+
 - **`ValidationError` (400):** Thrown when request body data fails Zod validation.
 - **`UnauthorizedError` (401):** Thrown by middleware in case of a missing or invalid token.
 - **`NotFoundError` (404):** Thrown by the service when the flashcard with the given `id` does not exist or does not belong to the user.
 - **General Errors (500):** All other unexpected errors (e.g., database connection error) will result in a 500 response.
 
 ## 8. Performance Considerations
+
 - The query to find a flashcard will use the primary key (`id`) and an index on `user_id` (`idx_flashcards_user_created`), ensuring high performance.
 - The `UPDATE` operation on a single row is very fast.
 - No performance issues are anticipated for this endpoint.
 
 ## 9. Implementation Steps
+
 1. **Zod Schema Definition:**
    - In the `@src/lib/schemas/flashcard.schemas.ts` file, define and export `UpdateFlashcardSchema` and the `UpdateFlashcardDto` type according to section 3.
 
@@ -140,6 +154,7 @@ Errors will be handled using custom error classes from `@src/lib/errors/common.e
    Use these `cURL` commands to test the endpoint. Replace `[ID]` with a valid flashcard ID.
 
    **1. Successful Update (only front)**
+
    ```bash
    curl --location --request PATCH 'http://localhost:4321/api/flashcards/1' \
    --header 'Content-Type: application/json' \
@@ -149,7 +164,8 @@ Errors will be handled using custom error classes from `@src/lib/errors/common.e
    ```
 
    **2. Invalid Request (Empty Body)**
-   *Should return a 400 Bad Request error.*
+   _Should return a 400 Bad Request error._
+
    ```bash
    curl --location --request PATCH 'http://localhost:4321/api/flashcards/1' \
    --header 'Content-Type: application/json' \
@@ -157,7 +173,8 @@ Errors will be handled using custom error classes from `@src/lib/errors/common.e
    ```
 
    **3. Validation Error (Field Too Long)**
-   *Should return a 400 Bad Request error.*
+   _Should return a 400 Bad Request error._
+
    ```bash
    curl --location --request PATCH 'http://localhost:4321/api/flashcards/1' \
    --header 'Content-Type: application/json' \
@@ -167,7 +184,8 @@ Errors will be handled using custom error classes from `@src/lib/errors/common.e
    ```
 
    **4. Not Found Error**
-   *Should return a 404 Not Found error.*
+   _Should return a 404 Not Found error._
+
    ```bash
    curl --location --request PATCH 'http://localhost:4321/api/flashcards/99999' \
    --header 'Content-Type: application/json' \

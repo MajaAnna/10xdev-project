@@ -5,10 +5,7 @@ interface StudyProgressBarProps {
   total: number;
 }
 
-export const StudyProgressBar: React.FC<StudyProgressBarProps> = ({
-  current,
-  total,
-}) => {
+export const StudyProgressBar: React.FC<StudyProgressBarProps> = ({ current, total }) => {
   const progressPercentage = total > 0 ? (current / total) * 100 : 0;
 
   return (
@@ -19,10 +16,7 @@ export const StudyProgressBar: React.FC<StudyProgressBarProps> = ({
         </span>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-        <div
-          className="bg-blue-600 h-2.5 rounded-full"
-          style={{ width: `${progressPercentage}%` }}
-        ></div>
+        <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progressPercentage}%` }}></div>
       </div>
     </div>
   );

@@ -375,4 +375,3 @@ export async function countFlashcardsForUser(supabase: SupabaseClient, userId: s
   });
   return totalCount;
 }
-

@@ -1,25 +1,26 @@
 <user_journey_analysis>
+
 ### 1. User Paths
 
 Based on the Product Requirements Document (PRD), the following user paths have been identified:
 
 - **Unauthenticated User Access**: A new or logged-out user lands on the application. They are restricted to the authentication pages. If they attempt to access any protected page (e.g., `/cards`), they are redirected to the Login page.
 - **Registration Path**: A new user decides to create an account.
-    - They navigate to the Registration page.
-    - They fill in and submit the registration form (email, password).
-    - They are shown a message instructing them to verify their email address.
-    - They click the verification link in their email.
-    - Their account is activated, and they can now log in.
+  - They navigate to the Registration page.
+  - They fill in and submit the registration form (email, password).
+  - They are shown a message instructing them to verify their email address.
+  - They click the verification link in their email.
+  - Their account is activated, and they can now log in.
 - **Login Path**: A registered user wants to access the application.
-    - They navigate to the Login page.
-    - They enter their credentials.
-    - **Success**: If credentials are correct and the account is verified, they are granted access to the main application dashboard.
-    - **Failure**: If credentials are incorrect, an error message is displayed, and they remain on the Login page.
+  - They navigate to the Login page.
+  - They enter their credentials.
+  - **Success**: If credentials are correct and the account is verified, they are granted access to the main application dashboard.
+  - **Failure**: If credentials are incorrect, an error message is displayed, and they remain on the Login page.
 - **Authenticated User Experience**: Once logged in, the user can access all core features of the application.
-    - Generate flashcards from text.
-    - Review, edit, and manage generated card candidates.
-    - View and manage their collection of saved cards ("My Cards").
-    - Use the "Study" mode.
+  - Generate flashcards from text.
+  - Review, edit, and manage generated card candidates.
+  - View and manage their collection of saved cards ("My Cards").
+  - Use the "Study" mode.
 - **Logout Path**: An authenticated user decides to end their session. They click a logout button, their session is terminated, and they are redirected to the Login page.
 
 ### 2. Main States and Purpose
@@ -40,6 +41,7 @@ Based on the Product Requirements Document (PRD), the following user paths have 
 
 </user_journey_analysis>
 <mermaid_diagram>
+
 ```mermaid
 stateDiagram-v2
     direction LR
@@ -49,7 +51,7 @@ stateDiagram-v2
         [*] --> LandingPage
         LandingPage --> LoginPageState: Clicks Login
         LandingPage --> Registration: Clicks Register
-        
+
         note right of LandingPage
             User can only access
             Login or Register pages
@@ -76,11 +78,11 @@ stateDiagram-v2
         Dashboard --> GenerateCards
         Dashboard --> MyCards
         Dashboard --> StudyMode
-        
+
         GenerateCards --> Dashboard
         MyCards --> Dashboard
         StudyMode --> Dashboard
-        
+
         Dashboard --> LoggedOut: Clicks Logout
     }
 
@@ -90,4 +92,5 @@ stateDiagram-v2
     LoggedOut --> Unauthenticated
     PasswordRecovery --> LoginPageState: Resets password
 ```
+
 </mermaid_diagram>

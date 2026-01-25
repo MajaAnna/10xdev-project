@@ -28,6 +28,7 @@ Widok "My Cards" (`/cards`) jest centralnym miejscem dla użytkownika do zarząd
 ## 4. Szczegóły komponentów
 
 ### `MyCardsView.tsx`
+
 - **Opis komponentu:** Główny kontener widoku. Odpowiedzialny za pobieranie danych, zarządzanie stanem listy fiszek oraz kontrolowanie widoczności wszystkich modali. Wykorzysta customowy hook `useMyCards` do obsługi logiki biznesowej.
 - **Główne elementy:** `Button` (Shadcn), `SavedCardGrid`, `ManualCardModal`, `EditCardModal`, `DeleteConfirmationDialog`.
 - **Obsługiwane interakcje:** Otwieranie modala do tworzenia nowej fiszki, otwieranie modala do edycji po otrzymaniu zdarzenia z `SavedCardGrid`, otwieranie modala potwierdzenia usunięcia.
@@ -35,6 +36,7 @@ Widok "My Cards" (`/cards`) jest centralnym miejscem dla użytkownika do zarząd
 - **Propsy:** Brak.
 
 ### `SavedCardGrid.tsx`
+
 - **Opis komponentu:** Wyświetla responsywną siatkę (`grid`) komponentów `SavedCard`. Renderuje również stan pusty, gdy nie ma żadnych fiszek do wyświetlenia.
 - **Główne elementy:** Siatka CSS (np. `div` z klasami Tailwind CSS), iteracja po liście fiszek, komponent `SavedCard`.
 - **Obsługiwane interakcje:** Przekazuje zdarzenia `onEdit` i `onDelete` od dziecka (`SavedCard`) do rodzica (`MyCardsView`).
@@ -49,6 +51,7 @@ Widok "My Cards" (`/cards`) jest centralnym miejscem dla użytkownika do zarząd
   ```
 
 ### `SavedCard.tsx`
+
 - **Opis komponentu:** Reprezentuje pojedynczą fiszkę na siatce. Wyświetla jej przód i tył oraz przyciski akcji.
 - **Główne elementy:** `Card`, `CardHeader`, `CardContent`, `CardFooter` (Shadcn), przyciski "Edytuj" i "Usuń".
 - **Obsługiwane interakcje:** `onClick` na przyciskach "Edytuj" i "Usuń", które wywołują odpowiednie callbacki z propsów.
@@ -63,6 +66,7 @@ Widok "My Cards" (`/cards`) jest centralnym miejscem dla użytkownika do zarząd
   ```
 
 ### `ManualCardModal.tsx` i `EditCardModal.tsx`
+
 - **Opis komponentu:** Modale oparte na `Dialog` od Shadcn, zawierające formularz do tworzenia/edycji fiszki. Do budowy formularza zostaną użyte `react-hook-form`, `zod` do walidacji oraz komponent `Form` z Shadcn.
 - **Główne elementy:** `Dialog`, `Form`, `Input`, `Textarea`, `Button`. Będą zawierać liczniki znaków dla pól `front` i `back`.
 - **Obsługiwane interakcje:** Wprowadzanie tekstu, `onSubmit` formularza.
@@ -71,6 +75,7 @@ Widok "My Cards" (`/cards`) jest centralnym miejscem dla użytkownika do zarząd
   - `back`: wymagane, 1-500 znaków, nie może składać się tylko z białych znaków.
 - **Typy:** `CreateFlashcardDTO`, `UpdateFlashcardDTO`, `Flashcard` (dla `EditCardModal`).
 - **Propsy:**
+
   ```typescript
   // ManualCardModalProps
   interface ManualCardModalProps {
@@ -88,6 +93,7 @@ Widok "My Cards" (`/cards`) jest centralnym miejscem dla użytkownika do zarząd
   ```
 
 ### `DeleteConfirmationDialog.tsx`
+
 - **Opis komponentu:** Prosty dialog potwierdzenia (`AlertDialog` z Shadcn) zapobiegający przypadkowemu usunięciu.
 - **Główne elementy:** `AlertDialog`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogCancel`, `AlertDialogAction`.
 - **Obsługiwane interakcje:** `onClick` na przycisku potwierdzającym i anulującym.
@@ -104,16 +110,16 @@ Widok "My Cards" (`/cards`) jest centralnym miejscem dla użytkownika do zarząd
 ## 5. Typy
 
 ```typescript
-import { Database } from '@/db/database.types';
+import { Database } from "@/db/database.types";
 
 // Główny typ fiszki używany w UI (ViewModel)
-export type Flashcard = Database['public']['Tables']['flashcards']['Row'];
+export type Flashcard = Database["public"]["Tables"]["flashcards"]["Row"];
 
 // DTO do tworzenia nowej, manualnej fiszki
 export interface CreateFlashcardDTO {
   front: string;
   back: string;
-  source: 'manual';
+  source: "manual";
   generation_id: null;
 }
 
@@ -130,6 +136,7 @@ Zarządzanie stanem zostanie scentralizowane w customowym hooku `useMyCards`, co
 
 - **Lokalizacja hooka:** `src/components/hooks/useMyCards.ts`
 - **Struktura hooka:**
+
   ```typescript
   function useMyCards() {
     const [cards, setCards] = useState<Flashcard[]>([]);
@@ -137,12 +144,20 @@ Zarządzanie stanem zostanie scentralizowane w customowym hooku `useMyCards`, co
     const [error, setError] = useState<string | null>(null);
 
     // Funkcja do pobierania początkowych danych
-    const fetchCards = useCallback(async () => { /* ... */ }, []);
+    const fetchCards = useCallback(async () => {
+      /* ... */
+    }, []);
 
     // Funkcje do operacji CRUD zaimplementowane z logiką optymistyczną
-    const addCard = async (data: CreateFlashcardDTO) => { /* ... */ };
-    const updateCard = async (id: number, data: UpdateFlashcardDTO) => { /* ... */ };
-    const deleteCard = async (id: number) => { /* ... */ };
+    const addCard = async (data: CreateFlashcardDTO) => {
+      /* ... */
+    };
+    const updateCard = async (id: number, data: UpdateFlashcardDTO) => {
+      /* ... */
+    };
+    const deleteCard = async (id: number) => {
+      /* ... */
+    };
 
     // Inicjalne pobranie danych
     useEffect(() => {
@@ -152,6 +167,7 @@ Zarządzanie stanem zostanie scentralizowane w customowym hooku `useMyCards`, co
     return { cards, isLoading, error, addCard, updateCard, deleteCard };
   }
   ```
+
 - **Stan w `MyCardsView.tsx`:** Komponent będzie zarządzał jedynie stanem widoczności modali oraz przechowywał referencje do aktualnie edytowanej/usuwanej fiszki.
   ```typescript
   const [isManualModalOpen, setManualModalOpen] = useState(false);

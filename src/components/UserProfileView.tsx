@@ -53,17 +53,18 @@ const UserProfileView: React.FC = () => {
 
   const handleSignOut = async () => {
     setIsLoading(true);
-    console.log("Attempting to sign out...");
+    console.log("UserProfileView: Attempting to sign out...");
     const response = await fetch("/api/auth/logout", {
       method: "POST",
     });
 
     if (response.ok) {
+      console.log("UserProfileView: Server-side logout API call successful. Redirecting to login.");
       console.log("Server-side logout API call successful. Redirecting to login.");
       window.location.href = "/auth/login";
     } else {
       const errorData = await response.json();
-      console.error("Server-side logout API call failed:", errorData);
+      console.error("UserProfileView: Server-side logout API call failed:", errorData);
       setError(errorData.error || "Błąd podczas wylogowywania.");
       toast.error(errorData.error || "Wystąpił błąd podczas wylogowywania. Spróbuj ponownie.");
       setIsLoading(false);

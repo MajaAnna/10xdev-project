@@ -1,9 +1,11 @@
 # API Endpoint Implementation Plan: DELETE /api/flashcards/:id
 
 ## 1. Endpoint Overview
+
 This endpoint is responsible for the permanent deletion of a single flashcard from the database. It is a critical destructive action that must be protected to ensure a user can only delete flashcards they own.
 
 ## 2. Request Details
+
 - **HTTP Method**: `DELETE`
 - **URL Structure**: `/api/flashcards/[id].ts` (Astro file-based routing)
 - **Parameters**:
@@ -13,6 +15,7 @@ This endpoint is responsible for the permanent deletion of a single flashcard fr
 - **Request Body**: None.
 
 ## 3. Utilized Types
+
 - **Input Validation**: A `zod` schema will be used to validate the `id` parameter.
   - `z.coerce.number().int().positive()`
 - **Success Response DTO**: `DeleteFlashcardResponseDto` from `src/types.ts`.
@@ -22,6 +25,7 @@ This endpoint is responsible for the permanent deletion of a single flashcard fr
   - Custom error types (`NotFoundError`, `UnauthorizedError`, `ValidationError`) from `src/lib/errors/common.errors.ts`.
 
 ## 4. Data Flow
+
 1. A client sends a `DELETE` request to `/api/flashcards/{id}` with a valid JWT.
 2. The Astro middleware (`src/middleware/index.ts`) validates the JWT, retrieves the user session, and attaches the `user` and `supabase` client instance to `context.locals`.
 3. The `DELETE` handler in `src/pages/api/flashcards/[id].ts` is invoked.
@@ -36,12 +40,15 @@ This endpoint is responsible for the permanent deletion of a single flashcard fr
 12. If the service call is successful, the handler constructs the `ApiResponseDto<DeleteFlashcardResponseDto>` and sends a `200 OK` response.
 
 ## 5. Security Considerations
+
 - **Authentication**: All requests to this endpoint must be authenticated. The existing middleware is expected to handle JWT validation. The endpoint logic must reject any request that does not have a valid user session attached to the context.
 - **Authorization**: This is the most critical security aspect. The database query **must** include a `WHERE` clause matching both the `id` of the flashcard and the `user_id` of the authenticated user. This prevents a user from deleting another user's resources by guessing IDs.
 - **Input Validation**: The `id` parameter will be strictly validated as a positive integer to prevent invalid query formats or potential injection vectors, even with the safety of the Supabase client.
 
 ## 6. Error Handling
+
 The endpoint will return standardized error responses in the `ErrorResponseDto` format.
+
 - **`400 Bad Request`**:
   - **Trigger**: The `id` parameter is not a valid positive integer.
   - **Error Code**: `VALIDATION_FAILED`
@@ -56,10 +63,12 @@ The endpoint will return standardized error responses in the `ErrorResponseDto` 
   - **Error Code**: `INTERNAL_SERVER_ERROR`
 
 ## 7. Performance Considerations
+
 - The `DELETE` operation targets a single record by its primary key (`id`), which is indexed (`flashcards_pkey`).
 - The query will be highly performant, and no significant performance bottlenecks are anticipated. The operation should complete in milliseconds.
 
 ## 8. Implementation Steps
+
 1.  **Create API Route File**:
     - Create the file `src/pages/api/flashcards/[id].ts`.
 2.  **Implement DELETE Handler**:
@@ -98,6 +107,7 @@ curl -X DELETE "http://localhost:4321/api/flashcards/1" \
 ```
 
 **Expected Response (200 OK):**
+
 ```json
 {
   "data": {
@@ -117,6 +127,7 @@ curl -X DELETE "http://localhost:4321/api/flashcards/abc" \
 ```
 
 **Expected Response (400 Bad Request):**
+
 ```json
 {
   "error": {
@@ -142,6 +153,7 @@ curl -X DELETE "http://localhost:4321/api/flashcards/INVALID_FLASHCARD_ID" \
 ```
 
 **Expected Response (404 Not Found):**
+
 ```json
 {
   "error": {

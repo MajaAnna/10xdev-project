@@ -12,6 +12,7 @@ This document defines the complete REST API specification for the AI Cards appli
 ### Development Configuration
 
 For MVP development phase:
+
 - **Authentication**: Not required (will be added later)
 - **RLS Policies**: Disabled
 - **User ID**: Hard-coded test UUID for all operations (e.g., `00000000-0000-0000-0000-000000000001`)
@@ -21,6 +22,7 @@ For MVP development phase:
 ### Implementation Notes for Dev Mode
 
 1. **Hardcoded User ID**: Use `DEFAULT_USER_ID` constant from `src/db/supabase.client.ts`:
+
    ```typescript
    import { DEFAULT_USER_ID } from "../../db/supabase.client";
    const userId = DEFAULT_USER_ID; // '00000000-0000-0000-0000-000000000001'
@@ -29,6 +31,7 @@ For MVP development phase:
 2. **Skip Auth Checks**: All endpoints accept requests without checking for authentication
 
 3. **Database Setup**: Ensure RLS policies are disabled in your migrations:
+
    ```sql
    ALTER TABLE flashcards DISABLE ROW LEVEL SECURITY;
    ALTER TABLE generations DISABLE ROW LEVEL SECURITY;
@@ -41,12 +44,12 @@ For MVP development phase:
 
 ## 1. Resources
 
-| Resource | Database Table | Description |
-|----------|---------------|-------------|
-| Flashcards | `flashcards` | User's flashcards (manual and AI-generated) |
-| Generations | `generations` | AI generation sessions and analytics |
+| Resource              | Database Table          | Description                                                         |
+| --------------------- | ----------------------- | ------------------------------------------------------------------- |
+| Flashcards            | `flashcards`            | User's flashcards (manual and AI-generated)                         |
+| Generations           | `generations`           | AI generation sessions and analytics                                |
 | Generation Error Logs | `generation_error_logs` | Used for logging errors happening during flashards generation by AI |
-| Auth | `auth.users` | User authentication (Supabase managed) |
+| Auth                  | `auth.users`            | User authentication (Supabase managed)                              |
 
 ---
 
@@ -63,11 +66,13 @@ For MVP development phase:
 **Authentication**: Not required in dev mode
 
 **Query Parameters**:
+
 - `page` (optional, integer, default: 1): Page number for pagination
 - `limit` (optional, integer, default: 20, max: 100): Number of items per page
 - `source` (optional, enum): Filter by source type (`manual`, `ai_generated`, `ai_generated_edited`)
 
 **Response Body** (200 OK):
+
 ```json
 {
   "data": [
@@ -92,7 +97,9 @@ For MVP development phase:
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Invalid query parameters
+
 ```json
 {
   "error": {
@@ -113,6 +120,7 @@ For MVP development phase:
 **Authentication**: Not required in dev mode
 
 **Request Headers**:
+
 ```
 Content-Type: application/json
 ```
@@ -120,6 +128,7 @@ Content-Type: application/json
 **Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Request Body**:
+
 ```json
 {
   "front": "What is photosynthesis?",
@@ -130,6 +139,7 @@ Content-Type: application/json
 ```
 
 **Request Body Schema**:
+
 - `front` (required, string, 1-200 chars): Question/term side
 - `back` (required, string, 1-500 chars): Answer/definition side
 - `source` (required, enum): One of `manual`, `ai_generated`, `ai_generated_edited`
@@ -138,6 +148,7 @@ Content-Type: application/json
   - MUST be null for `manual` source
 
 **Business Logic**:
+
 1. Validate generation_id based on source:
    - If `source` = `manual`: generation_id MUST be null
    - If `source` = `ai_generated` or `ai_generated_edited`: generation_id MUST be provided and valid
@@ -146,6 +157,7 @@ Content-Type: application/json
    - Increment `accepted_edited_count` (if `source` = `ai_generated_edited`)
 
 **Response Body** (201 Created):
+
 ```json
 {
   "data": {
@@ -162,7 +174,9 @@ Content-Type: application/json
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Validation errors
+
 ```json
 {
   "error": {
@@ -185,7 +199,9 @@ Content-Type: application/json
   }
 }
 ```
+
 - `404 Not Found`: Generation ID not found or doesn't belong to user
+
 ```json
 {
   "error": {
@@ -206,6 +222,7 @@ Content-Type: application/json
 **Authentication**: Not required in dev mode
 
 **Request Headers**:
+
 ```
 Content-Type: application/json
 ```
@@ -213,6 +230,7 @@ Content-Type: application/json
 **Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Request Body**:
+
 ```json
 {
   "generation_id": 45,
@@ -232,6 +250,7 @@ Content-Type: application/json
 ```
 
 **Request Body Schema**:
+
 - `generation_id` (required, integer): ID of generation session
 - `flashcards` (required, array): Array of flashcard objects
   - `front` (required, string, 1-200 chars)
@@ -239,6 +258,7 @@ Content-Type: application/json
   - `source` (required, enum): One of `ai_generated`, `ai_generated_edited`
 
 **Business Logic**:
+
 1. Validate all flashcards before creating any
 2. Create all flashcards in a transaction
 3. Update generation record with total counts:
@@ -247,6 +267,7 @@ Content-Type: application/json
 4. Insert flashcards with their respective `source` values
 
 **Response Body** (201 Created):
+
 ```json
 {
   "data": {
@@ -278,7 +299,9 @@ Content-Type: application/json
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Validation errors (includes index of failing flashcard)
+
 ```json
 {
   "error": {
@@ -294,6 +317,7 @@ Content-Type: application/json
   }
 }
 ```
+
 - `404 Not Found`: Generation ID not found
 - `413 Payload Too Large`: Too many flashcards in one request (max 50)
 
@@ -308,6 +332,7 @@ Content-Type: application/json
 **Authentication**: Not required in dev mode
 
 **URL Parameters**:
+
 - `id` (required, integer): Flashcard ID
 
 **Request Headers**: None required in dev mode
@@ -315,6 +340,7 @@ Content-Type: application/json
 **Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Response Body** (200 OK):
+
 ```json
 {
   "data": {
@@ -331,7 +357,9 @@ Content-Type: application/json
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Flashcard not found
+
 ```json
 {
   "error": {
@@ -352,9 +380,11 @@ Content-Type: application/json
 **Authentication**: Not required in dev mode
 
 **URL Parameters**:
+
 - `id` (required, integer): Flashcard ID
 
 **Request Headers**:
+
 ```
 Content-Type: application/json
 ```
@@ -362,6 +392,7 @@ Content-Type: application/json
 **Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Request Body**:
+
 ```json
 {
   "front": "What is the capital city of France?",
@@ -370,11 +401,13 @@ Content-Type: application/json
 ```
 
 **Request Body Schema**:
+
 - `front` (optional, string, 1-200 chars, not empty/whitespace): Updated question/term
 - `back` (optional, string, 1-500 chars, not empty/whitespace): Updated answer/definition
 - At least one field must be provided
 
 **Business Logic**:
+
 1. Validate that at least one field (front or back) is provided
 2. Validate length constraints (min 1 char after trim, max 200 for front, max 500 for back)
 3. Automatically update the `source` field based on current source:
@@ -384,6 +417,7 @@ Content-Type: application/json
 4. Update `updated_at` timestamp automatically (database trigger)
 
 **Response Body** (200 OK):
+
 ```json
 {
   "data": {
@@ -400,8 +434,10 @@ Content-Type: application/json
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Flashcard not found
 - `400 Bad Request`: Validation errors
+
 ```json
 {
   "error": {
@@ -428,6 +464,7 @@ Content-Type: application/json
 **Authentication**: Not required in dev mode
 
 **URL Parameters**:
+
 - `id` (required, integer): Flashcard ID
 
 **Request Headers**: None required in dev mode
@@ -435,6 +472,7 @@ Content-Type: application/json
 **Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Response Body** (200 OK):
+
 ```json
 {
   "data": {
@@ -445,7 +483,9 @@ Content-Type: application/json
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Flashcard not found
+
 ```json
 {
   "error": {
@@ -468,6 +508,7 @@ Content-Type: application/json
 **Authentication**: Not required in dev mode
 
 **Request Headers**:
+
 ```
 Content-Type: application/json
 ```
@@ -475,6 +516,7 @@ Content-Type: application/json
 **Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Request Body**:
+
 ```json
 {
   "source_text": "Photosynthesis is the process by which plants use sunlight, water, and carbon dioxide to create oxygen and energy in the form of sugar. It occurs in the chloroplasts of plant cells...",
@@ -483,10 +525,12 @@ Content-Type: application/json
 ```
 
 **Request Body Schema**:
+
 - `source_text` (required, string, 100-10,000 chars): Text to generate flashcards from
 - `model` (optional, string, default: "gpt-4"): AI model to use for generation
 
 **Business Logic**:
+
 1. Validate source text length (100-10,000 characters)
 2. Calculate MD5 hash of source text
 3. Call OpenRouter API with source text
@@ -495,9 +539,10 @@ Content-Type: application/json
    - `generated_count` = number of candidates returned
    - `generation_duration` = time taken in milliseconds
    - `source_text_hash` and `source_text_length`
-7. Return generation_id and candidates array
+6. Return generation_id and candidates array
 
 **Response Body** (201 Created):
+
 ```json
 {
   "data": {
@@ -532,7 +577,9 @@ Content-Type: application/json
 ```
 
 **Error Responses**:
+
 - `400 Bad Request`: Validation errors
+
 ```json
 {
   "error": {
@@ -547,7 +594,9 @@ Content-Type: application/json
   }
 }
 ```
+
 - `500 Internal Server Error`: AI generation failed
+
 ```json
 {
   "error": {
@@ -556,7 +605,9 @@ Content-Type: application/json
   }
 }
 ```
+
 - `429 Too Many Requests`: Rate limit exceeded
+
 ```json
 {
   "error": {
@@ -565,7 +616,9 @@ Content-Type: application/json
   }
 }
 ```
+
 - `503 Service Unavailable`: AI service unavailable
+
 ```json
 {
   "error": {
@@ -588,6 +641,7 @@ Content-Type: application/json
 **Authentication**: Not required in dev mode
 
 **Query Parameters**:
+
 - `page` (optional, integer, default: 1): Page number
 - `limit` (optional, integer, default: 20, max: 100): Items per page
 
@@ -596,6 +650,7 @@ Content-Type: application/json
 **Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Response Body** (200 OK):
+
 ```json
 {
   "data": [
@@ -637,6 +692,7 @@ None specific (standard error format applies if needed)
 **Authentication**: Not required in dev mode
 
 **URL Parameters**:
+
 - `id` (required, integer): Generation ID
 
 **Request Headers**: None required in dev mode
@@ -644,6 +700,7 @@ None specific (standard error format applies if needed)
 **Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Response Body** (200 OK):
+
 ```json
 {
   "data": {
@@ -671,6 +728,7 @@ None specific (standard error format applies if needed)
 ```
 
 **Error Responses**:
+
 - `404 Not Found`: Generation not found
 
 ---
@@ -686,6 +744,7 @@ None specific (standard error format applies if needed)
 **Authentication**: Not required in dev mode (Admin access recommended for production)
 
 **Query Parameters**:
+
 - `page` (optional, integer, default: 1): Page number
 - `limit` (optional, integer, default: 20, max: 100): Items per page
 - `user_id` (optional, uuid): Filter by specific user (admin only)
@@ -698,6 +757,7 @@ None specific (standard error format applies if needed)
 **Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Response Body** (200 OK):
+
 ```json
 {
   "data": [
@@ -732,6 +792,7 @@ None specific (standard error format applies if needed)
 ```
 
 **Use Cases**:
+
 - Monitor AI generation failure rates
 - Identify problematic source texts (via hash)
 - Track API errors by model
@@ -740,8 +801,10 @@ None specific (standard error format applies if needed)
 
 **Error Responses**:
 None specific (standard error format applies if needed)
+
 - `403 Forbidden`: User lacks admin permissions (if admin-only in production)
 - `400 Bad Request`: Invalid query parameters
+
 ```json
 {
   "error": {
@@ -770,6 +833,7 @@ None specific (standard error format applies if needed)
 **Note**: In production, this endpoint will require `Authorization: Bearer <jwt_token>` header.
 
 **Response Body** (200 OK):
+
 ```json
 {
   "data": {
@@ -788,6 +852,7 @@ None specific (standard error format applies if needed)
 ```
 
 **Calculated Metrics**:
+
 - `ai_adoption_rate`: `(ai_generated + ai_generated_edited) / total_flashcards`
 - `average_acceptance_rate`: Average of all generation acceptance rates
 
@@ -795,6 +860,7 @@ None specific (standard error format applies if needed)
 None specific (standard error format applies if needed)
 
 ---
+
 ## 3. Authentication and Authorization
 
 ### 3.1. Development Mode (Current)
@@ -802,6 +868,7 @@ None specific (standard error format applies if needed)
 **Status**: Authentication is **NOT IMPLEMENTED** in development mode
 
 **Implementation**:
+
 - All endpoints work without authentication
 - No JWT tokens required
 - Hardcoded user ID used for all operations: `00000000-0000-0000-0000-000000000001`
@@ -827,6 +894,7 @@ See Section 11 for migration steps.
 These endpoints are provided by Supabase Auth and don't require custom implementation:
 
 #### Sign Up
+
 ```
 POST /auth/v1/signup
 Content-Type: application/json
@@ -838,6 +906,7 @@ Content-Type: application/json
 ```
 
 #### Sign In
+
 ```
 POST /auth/v1/token?grant_type=password
 Content-Type: application/json
@@ -849,18 +918,21 @@ Content-Type: application/json
 ```
 
 #### Sign Out
+
 ```
 POST /auth/v1/logout
 Authorization: Bearer <jwt_token>
 ```
 
 #### Get Current User
+
 ```
 GET /auth/v1/user
 Authorization: Bearer <jwt_token>
 ```
 
 #### Password Reset Request
+
 ```
 POST /auth/v1/recover
 Content-Type: application/json
@@ -877,11 +949,13 @@ Content-Type: application/json
 **Production Mode**: All data access will be protected by PostgreSQL Row Level Security (RLS) policies defined in the database schema.
 
 **Production Enforcement**:
+
 - Every query automatically filters by `user_id = auth.uid()`
 - Users can only access their own flashcards, generations, and error logs
 - Supabase client automatically includes user context from JWT token
 
 **RLS Policies** (defined in schema, but currently disabled):
+
 - `SELECT`: Users can view only their own data
 - `INSERT`: Users can create only their own data
 - `UPDATE`: Users can modify only their own data
@@ -890,12 +964,14 @@ Content-Type: application/json
 ### 3.5. Security Headers
 
 All API responses include security headers:
+
 ```
 X-Content-Type-Options: nosniff
 X-Frame-Options: DENY
 X-XSS-Protection: 1; mode=block
 Strict-Transport-Security: max-age=31536000; includeSubDomains
 ```
+
 ---
 
 ## 4. Validation and Business Logic
@@ -903,22 +979,25 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 ### 4.1. Validation Rules
 
 #### Flashcards
-| Field | Rules | Error Message |
-|-------|-------|---------------|
-| front | Required, 1-200 chars, not empty/whitespace | "Front must be between 1 and 200 characters and cannot be empty or whitespace only" |
-| back | Required, 1-500 chars, not empty/whitespace | "Back must be between 1 and 500 characters and cannot be empty or whitespace only" |
-| source | Required, enum (manual, ai_generated, ai_generated_edited) | "Source must be one of: manual, ai_generated, ai_generated_edited" |
+
+| Field         | Rules                                                                                          | Error Message                                                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| front         | Required, 1-200 chars, not empty/whitespace                                                    | "Front must be between 1 and 200 characters and cannot be empty or whitespace only"                                                    |
+| back          | Required, 1-500 chars, not empty/whitespace                                                    | "Back must be between 1 and 500 characters and cannot be empty or whitespace only"                                                     |
+| source        | Required, enum (manual, ai_generated, ai_generated_edited)                                     | "Source must be one of: manual, ai_generated, ai_generated_edited"                                                                     |
 | generation_id | REQUIRED for ai_generated/ai_generated_edited, MUST be null for manual, must exist in database | "generation_id is required for AI-generated flashcards" / "generation_id must be null for manual flashcards" / "Invalid generation_id" |
 
 #### Generations
-| Field | Rules | Error Message |
-|-------|-------|---------------|
+
+| Field       | Rules                      | Error Message                                           |
+| ----------- | -------------------------- | ------------------------------------------------------- |
 | source_text | Required, 100-10,000 chars | "Source text must be between 100 and 10,000 characters" |
-| model | Optional, max 50 chars | "Model name must not exceed 50 characters" |
+| model       | Optional, max 50 chars     | "Model name must not exceed 50 characters"              |
 
 ### 4.2. Business Logic Implementation
 
 #### BL-1: AI Generation Flow
+
 ```
 1. Validate source text length (100-10,000 characters)
 2. Calculate MD5 hash: md5(source_text)
@@ -934,12 +1013,13 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 ```
 
 #### BL-2: Accept Single Flashcard
+
 ```
 1. Validate front/back according to rules
 2. Validate source is one of: manual, ai_generated, ai_generated_edited
 3. Validate generation_id based on source:
    - If source = 'manual': generation_id MUST be null (error if not)
-   - If source = 'ai_generated' or 'ai_generated_edited': 
+   - If source = 'ai_generated' or 'ai_generated_edited':
      - generation_id MUST be provided (error if null)
      - generation_id MUST exist in database (error if not found)
 4. Get user_id:
@@ -953,6 +1033,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 ```
 
 #### BL-3: Bulk Accept Flashcards
+
 ```
 1. Validate generation_id exists in database
 2. Validate all flashcards before creating any:
@@ -969,6 +1050,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 ```
 
 #### BL-4: Error Logging
+
 ```
 When POST /api/generations fails:
 1. Catch error from OpenRouter API
@@ -985,6 +1067,7 @@ When POST /api/generations fails:
 ```
 
 #### BL-5: Update Flashcard
+
 ```
 1. Verify flashcard exists:
    - Dev mode: Check flashcard belongs to DEFAULT_USER_ID
@@ -1006,15 +1089,16 @@ When POST /api/generations fails:
 
 To prevent abuse and manage AI API costs:
 
-| Endpoint | Rate Limit | Window |
-|----------|-----------|--------|
-| POST /api/generations | 10 requests | per minute per user |
-| POST /api/flashcards | 100 requests | per minute per user |
-| POST /api/flashcards/bulk | 20 requests | per minute per user |
-| GET /api/flashcards | 100 requests | per minute per user |
-| Other endpoints | 200 requests | per minute per user |
+| Endpoint                  | Rate Limit   | Window              |
+| ------------------------- | ------------ | ------------------- |
+| POST /api/generations     | 10 requests  | per minute per user |
+| POST /api/flashcards      | 100 requests | per minute per user |
+| POST /api/flashcards/bulk | 20 requests  | per minute per user |
+| GET /api/flashcards       | 100 requests | per minute per user |
+| Other endpoints           | 200 requests | per minute per user |
 
 Rate limit headers included in responses:
+
 ```
 X-RateLimit-Limit: 10
 X-RateLimit-Remaining: 8
@@ -1030,12 +1114,13 @@ All errors follow a consistent format:
   "error": {
     "code": "ERROR_CODE",
     "message": "Human-readable error message",
-    "details": { }
+    "details": {}
   }
 }
 ```
 
 **Error Codes**:
+
 - `UNAUTHORIZED`: Missing or invalid authentication
 - `FORBIDDEN`: User lacks permission for this resource
 - `VALIDATION_ERROR`: Request data validation failed
@@ -1061,6 +1146,7 @@ The following indexes (defined in database schema) optimize API performance:
 ### 5.2. Pagination
 
 All list endpoints support pagination to prevent large data transfers:
+
 - Default page size: 20 items
 - Maximum page size: 100 items
 - Cursor-based pagination can be implemented post-MVP for better performance
@@ -1068,17 +1154,20 @@ All list endpoints support pagination to prevent large data transfers:
 ### 5.3. Caching Strategy
 
 **Client-side caching**:
+
 - Flashcard lists: Cache with short TTL (30 seconds)
 - Single flashcard: Cache until mutation
 - Generations: Cache until new generation created
 
 **Server-side caching** (optional optimization):
+
 - Generation candidates: Cache by source_text_hash for 5 minutes
 - User analytics: Cache for 60 seconds
 
 ### 5.4. Database Connection Pooling
 
 Supabase handles connection pooling automatically. Recommended settings:
+
 - Pool size: 20 connections
 - Idle timeout: 10 minutes
 
@@ -1090,11 +1179,11 @@ Supabase handles connection pooling automatically. Recommended settings:
 **Strategy**: URL path versioning (e.g., `/api/v1/flashcards`)
 
 For MVP, version prefix is optional. Post-MVP, when breaking changes are introduced:
+
 - New version: `/api/v2/flashcards`
 - Old version: `/api/v1/flashcards` (maintained for 6 months)
 
 ---
-
 
 ## 8. Success Metrics Support
 
@@ -1105,6 +1194,7 @@ The API directly supports PRD success metrics:
 **Endpoint**: `GET /api/analytics/user`
 
 **Calculation**:
+
 ```
 acceptance_rate = (accepted_unedited_count + accepted_edited_count) / generated_count
 
@@ -1118,9 +1208,10 @@ Target: acceptance_rate >= 0.75
 **Endpoint**: `GET /api/analytics/user`
 
 **Calculation**:
+
 ```
-ai_adoption_rate = 
-  COUNT(flashcards WHERE source IN ('ai_generated', 'ai_generated_edited')) / 
+ai_adoption_rate =
+  COUNT(flashcards WHERE source IN ('ai_generated', 'ai_generated_edited')) /
   COUNT(flashcards)
 
 Target: ai_adoption_rate >= 0.75
@@ -1131,6 +1222,7 @@ Target: ai_adoption_rate >= 0.75
 ### 10.2. CORS Configuration
 
 For Astro application running on same domain:
+
 - Allow credentials: true
 - Allow origin: Same origin or specified domains
 - Allow methods: GET, POST, PATCH, DELETE, OPTIONS
@@ -1139,11 +1231,13 @@ For Astro application running on same domain:
 ### 10.3. Monitoring and Logging
 
 **Logging Strategy**:
+
 - Info: All successful API calls (method, path, user_id, duration)
 - Warning: Rate limit hits, validation errors
 - Error: Generation failures, database errors, unexpected errors
 
 **Monitoring Metrics**:
+
 - API response times by endpoint
 - Error rates by endpoint
 - Generation success/failure rates
@@ -1161,9 +1255,11 @@ When ready to enable authentication and security, follow these steps:
 ### 11.1. Enable Supabase Auth
 
 1. **Start Supabase** (if using local development):
+
    ```bash
    supabase start
    ```
+
    This automatically creates the `auth.users` table and auth schema.
 
 2. **Create a test user**:
@@ -1191,6 +1287,7 @@ The RLS policies should already be defined in your migrations (see database sche
 ### 11.3. Update API Implementation
 
 1. **Update Supabase client to handle auth**:
+
    ```typescript
    // src/db/supabase.client.ts
    import { createClient } from "@supabase/supabase-js";
@@ -1199,39 +1296,44 @@ The RLS policies should already be defined in your migrations (see database sche
    export const createSupabaseClient = (accessToken?: string) => {
      const supabaseUrl = import.meta.env.SUPABASE_URL;
      const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
-     
+
      return createClient<Database>(supabaseUrl, supabaseAnonKey, {
        global: {
-         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
-       }
+         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+       },
      });
    };
    ```
 
 2. **Update middleware to extract user from JWT**:
+
    ```typescript
    // src/middleware/index.ts
    import { defineMiddleware } from "astro:middleware";
    import { createSupabaseClient } from "../db/supabase.client";
 
    export const onRequest = defineMiddleware(async (context, next) => {
-     const authHeader = context.request.headers.get('Authorization');
-     const token = authHeader?.replace('Bearer ', '');
-     
+     const authHeader = context.request.headers.get("Authorization");
+     const token = authHeader?.replace("Bearer ", "");
+
      const supabase = createSupabaseClient(token);
-     const { data: { user }, error } = await supabase.auth.getUser();
-     
+     const {
+       data: { user },
+       error,
+     } = await supabase.auth.getUser();
+
      context.locals.supabase = supabase;
      context.locals.user = user;
-     
+
      return next();
    });
    ```
 
 3. **Add auth checks to API endpoints**:
+
    ```typescript
    // Example: src/pages/api/flashcards/index.ts
-   import type { APIRoute } from 'astro';
+   import type { APIRoute } from "astro";
 
    export const GET: APIRoute = async ({ locals }) => {
      // Check authentication
@@ -1239,24 +1341,24 @@ The RLS policies should already be defined in your migrations (see database sche
        return new Response(
          JSON.stringify({
            error: {
-             code: 'UNAUTHORIZED',
-             message: 'Authentication required'
-           }
+             code: "UNAUTHORIZED",
+             message: "Authentication required",
+           },
          }),
-         { status: 401, headers: { 'Content-Type': 'application/json' } }
+         { status: 401, headers: { "Content-Type": "application/json" } }
        );
      }
 
      // Use locals.user.id instead of hardcoded DEV_USER_ID
      const { data, error } = await locals.supabase
-       .from('flashcards')
-       .select('*')
-       .order('created_at', { ascending: false });
+       .from("flashcards")
+       .select("*")
+       .order("created_at", { ascending: false });
 
      // RLS automatically filters by user_id
      return new Response(JSON.stringify({ data }), {
        status: 200,
-       headers: { 'Content-Type': 'application/json' }
+       headers: { "Content-Type": "application/json" },
      });
    };
    ```
@@ -1275,6 +1377,7 @@ The RLS policies should already be defined in your migrations (see database sche
 ### 11.5. Frontend Changes
 
 Update your frontend to:
+
 1. Handle user sign up/sign in
 2. Store JWT token (Supabase handles this automatically)
 3. Include `Authorization: Bearer <token>` header in all API requests
@@ -1329,22 +1432,21 @@ Return the flashcards as a JSON array:
 
 ## Appendix B: HTTP Status Code Usage
 
-| Code | Usage |
-|------|-------|
-| 200 OK | Successful GET, PATCH, DELETE requests |
-| 201 Created | Successful POST requests creating resources |
-| 400 Bad Request | Validation errors, malformed requests |
-| 401 Unauthorized | Missing or invalid authentication |
-| 403 Forbidden | Valid auth but insufficient permissions |
-| 404 Not Found | Resource doesn't exist or doesn't belong to user |
-| 413 Payload Too Large | Request body exceeds size limits |
-| 429 Too Many Requests | Rate limit exceeded |
-| 500 Internal Server Error | Unexpected server errors |
-| 503 Service Unavailable | External service (AI, database) unavailable |
+| Code                      | Usage                                            |
+| ------------------------- | ------------------------------------------------ |
+| 200 OK                    | Successful GET, PATCH, DELETE requests           |
+| 201 Created               | Successful POST requests creating resources      |
+| 400 Bad Request           | Validation errors, malformed requests            |
+| 401 Unauthorized          | Missing or invalid authentication                |
+| 403 Forbidden             | Valid auth but insufficient permissions          |
+| 404 Not Found             | Resource doesn't exist or doesn't belong to user |
+| 413 Payload Too Large     | Request body exceeds size limits                 |
+| 429 Too Many Requests     | Rate limit exceeded                              |
+| 500 Internal Server Error | Unexpected server errors                         |
+| 503 Service Unavailable   | External service (AI, database) unavailable      |
 
 ---
 
 **Document Version**: 1.0.0  
 **Last Updated**: 2025-11-26  
 **Status**: Ready for Implementation
-

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Menu } from "lucide-react";
 import {
   NavigationMenu,
@@ -23,10 +24,32 @@ interface TopNavProps {
 
 const TopNav: React.FC<TopNavProps> = ({ user }) => {
   const [pathname, setPathname] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const sheetCloseBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setPathname(window.location.pathname);
   }, []);
+
+  const handleSignOut = async () => {
+    setIsLoading(true);
+    console.log("TopNav: Attempting to sign out...");
+    const response = await fetch("/api/auth/logout", {
+      method: "POST",
+    });
+
+    if (response.ok) {
+      console.log("TopNav: Server-side logout API call successful. Redirecting to login.");
+      // Close the mobile sheet if it's open
+      sheetCloseBtnRef.current?.click();
+      window.location.href = "/auth/login";
+    } else {
+      const errorData = await response.json();
+      console.error("TopNav: Server-side logout API call failed:", errorData);
+      toast.error(errorData.error || "Wystąpił błąd podczas wylogowywania. Spróbuj ponownie.");
+      setIsLoading(false);
+    }
+  };
 
   const loggedInLinks = [
     { href: "/generate", label: "Generator" },
@@ -88,7 +111,7 @@ const TopNav: React.FC<TopNavProps> = ({ user }) => {
 
         {/* User Info / Sign Out Button (Desktop) */}
         <div className="hidden md:flex items-center ml-auto">
-          {user ? <SignOutButton /> : null}
+          {user ? <SignOutButton onSignOut={handleSignOut} isLoading={isLoading} /> : null}
         </div>
 
         {/* Mobile Navigation */}
@@ -118,7 +141,9 @@ const TopNav: React.FC<TopNavProps> = ({ user }) => {
                       </NavigationMenuLink>
                     ))}
                     <div className="mt-4 pt-4 border-t">
-                      <SignOutButton />
+                      <SignOutButton onSignOut={handleSignOut} isLoading={isLoading} />
+                      {/* Invisible button to close the mobile sheet programmatically */}
+                      <button ref={sheetCloseBtnRef} className="hidden" />
                     </div>
                   </>
                 ) : (
