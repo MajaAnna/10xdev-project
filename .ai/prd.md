@@ -6,6 +6,8 @@ Celem projektu jest stworzenie aplikacji internetowej w modelu MVP (Minimum Viab
 
 Aplikacja umożliwia korzystanie z kluczowych funkcjonalności wyłącznie zarejestrowanym i zalogowanym użytkownikom. Dla niezalogowanych użytkowników dostępne są tylko panele rejestracji i logowania.
 
+Po zalogowaniu aplikacja umożliwi manualne tworzenie i edycję fiszek, a także zaoferuje system recenzji propozycji od AI, dając użytkownikowi pełną kontrolę nad jakością materiałów. Wszystkie zapisane fiszki będą przechowywane na koncie użytkownika i dostępne w ramach prostego trybu nauki, który w przyszłości zostanie zintegrowany z gotowym algorytmem powtórek (spaced repetition) typu open-source.
+
 ## 2. Problem użytkownika
 
 Głównym problemem, który rozwiązuje aplikacja, jest fakt, że manualne tworzenie wysokiej jakości fiszek jest procesem żmudnym i czasochłonnym. To zniechęca wiele osób, w tym uczniów, studentów i profesjonalistów, do korzystania z jednej z najefektywniejszych metod nauki, jaką są regularne powtórki (spaced repetition). Użytkownicy posiadają już materiały do nauki w formie cyfrowej (notatki, artykuły, fragmenty e-booków) i potrzebują narzędzia, które pozwoli im szybko i bez wysiłku przekształcić te treści w zestawy interaktywnych fiszek.
