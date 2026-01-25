@@ -78,8 +78,10 @@ sequenceDiagram
 
         Browser->>Browser: Przekierowanie na /cards
     else Poświadczenia niepoprawne
+        activate Supabase
         Supabase-->>AstroAPI: Błąd: Invalid login credentials
         deactivate Supabase
+        activate AstroAPI
         AstroAPI-->>Browser: 401 Unauthorized (błąd w JSON)
         deactivate AstroAPI
     end
@@ -126,7 +128,7 @@ sequenceDiagram
     Browser-->>EmailService: Użytkownik klika link resetujący (w tle)
 
     EmailService->>Browser: Użytkownik trafia na stronę ustawiania nowego hasła
-    Browser->>AstroAPI: POST /api/auth/set-new-password (nowe hasło, token resetujący) (Założenie: nowy endpoint)
+    Browser->>AstroAPI: POST /api/auth/set-new-password (nowe hasło, token resetujący)
     activate AstroAPI
     AstroAPI->>Supabase: updateUser() / resetPassword()
     activate Supabase
@@ -165,6 +167,8 @@ sequenceDiagram
     activate Supabase
     Supabase-->>AstroAPI: Sukces
     deactivate Supabase
-    AstroAPI-->>Browser: Wyczyść ciasteczka (Set-Cookie z expire=0), 302 Przekierowanie do /auth/login
+    AstroAPI-->>Browser: Wyczyść ciasteczka, 302 Przekierowanie do /auth/login
     deactivate AstroAPI
     Browser->>Browser: Przekierowanie do /auth/login
+```
+</mermaid_diagram>

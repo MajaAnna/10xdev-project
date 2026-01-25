@@ -47,14 +47,12 @@ stateDiagram-v2
 
     state Unauthenticated {
         [*] --> LandingPage
-        LandingPage --> LoginPage: Clicks 'Login'
-        LandingPage --> Registration: Clicks 'Register'
+        LandingPage --> LoginPageState: Clicks Login
+        LandingPage --> Registration: Clicks Register
         
         note right of LandingPage
             User can only access
-            Login or Register pages.
-            Any other route redirects
-            to the Login page.
+            Login or Register pages
         end note
     }
 
@@ -63,20 +61,14 @@ stateDiagram-v2
         RegistrationForm --> RegistrationForm: Invalid data
         RegistrationForm --> AwaitingVerification: Submits valid form
         AwaitingVerification --> EmailClient: User checks email
-        EmailClient --> LoginPage: Clicks verification link
-        
-        note left of AwaitingVerification
-            User is shown a message:
-            'Please verify your email address'.
-            Login is blocked until verification.
-        end note
+        EmailClient --> LoginPageState: Clicks verification link
     }
 
-    state "Login Process" as LoginPage {
+    state "Login Process" as LoginPageState {
       [*] --> LoginForm
       LoginForm --> Authenticated: Successful login
       LoginForm --> LoginForm: Invalid credentials
-      LoginForm --> PasswordRecovery: Clicks 'Forgot Password'
+      LoginForm --> PasswordRecovery: Forgot Password
     }
 
     state "Authenticated Experience" as Authenticated {
@@ -89,10 +81,13 @@ stateDiagram-v2
         MyCards --> Dashboard
         StudyMode --> Dashboard
         
-        Dashboard --> LoggedOut: Clicks 'Logout'
+        Dashboard --> LoggedOut: Clicks Logout
     }
 
-    LoggedOut --> LandingPage
-    PasswordRecovery --> LoginPage: Resets password
+    state PasswordRecovery
+    state LoggedOut
+
+    LoggedOut --> Unauthenticated
+    PasswordRecovery --> LoginPageState: Resets password
 ```
 </mermaid_diagram>
