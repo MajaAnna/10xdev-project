@@ -49,8 +49,12 @@ export const onRequest = defineMiddleware(async ({ locals, cookies, url, request
 
   // Case 1: User is logged in
   if (locals.user) {
-    // If a logged-in user tries to access a public auth page, redirect them to a protected page (e.g., /cards)
-    if (PUBLIC_PATHS.includes(url.pathname)) {
+    // Allow logout endpoint even for logged-in users
+    if (url.pathname === "/api/auth/logout") {
+      return next();
+    }
+    // If a logged-in user tries to access a public auth page (login/register), redirect them to a protected page
+    if (PUBLIC_PATHS.includes(url.pathname) && !url.pathname.startsWith("/api/auth/")) {
       return redirect("/cards"); // Or a dashboard page
     }
     // For all other cases (logged-in user accessing protected pages or public non-auth pages), allow access

@@ -18,7 +18,7 @@ const {
   data: { session },
 } = await Astro.locals.supabase.auth.getSession();
 
-// Safe JSON string for embedding
+// IMPORTANT: Convert the session object to a JSON string for client-side injection
 const serializedSession = JSON.stringify(session);
 ---
 
@@ -31,13 +31,14 @@ const serializedSession = JSON.stringify(session);
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
 
-    <!-- Safe JSON injection -->
-    <script id="supabase-session" type="application/json">
-      {serializedSession}
-    </script>
+    <!-- Safe JSON injection using a script tag with type="application/json" -->
+    <script id="supabase-session" type="application/json" set:html={serializedSession} />
 
     <script type="module">
-      window.__SUPABASE_INITIAL_SESSION_JSON__ = JSON.parse( document.getElementById("supabase-session").textContent );
+      /* eslint-disable prettier/prettier */
+      const sessionData = document.getElementById("supabase-session");
+      window.__SUPABASE_INITIAL_SESSION__ = sessionData ? sessionData.textContent : null;
+      /* eslint-enable prettier/prettier */
     </script>
   </head>
 
@@ -58,59 +59,3 @@ const serializedSession = JSON.stringify(session);
     height: 100%;
   }
 </style>
-
-
-
-
-<!-- ---
-import "../styles/global.css";
-import TopNav from "../components/TopNav.tsx";
-import { Toaster } from "@/components/ui/sonner";
-
-interface Props {
-  title?: string;
-}
-
-const { title = "AI Cards" } = Astro.props;
-const user = Astro.locals.user;
-
-if (!Astro.locals?.supabase) {
-  throw new Error("Supabase client not available in Astro.locals");
-}
-const {
-  data: { session },
-} = await Astro.locals.supabase.auth.getSession();
-
-// IMPORTANT: Convert the session object to a JSON string for client-side injection
-const serializedSession = JSON.stringify(session);
----
-
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <meta name="generator" content={Astro.generator} />
-    <title>{title}</title>
-    <script type="module">
-      window.__SUPABASE_INITIAL_SESSION_JSON__ = JSON.parse(`${serializedSession}`);
-    </script>
-  </head>
-  <body>
-    <TopNav client:load user={user} />
-    <div class="flex flex-col min-h-[calc(100vh-3.5rem)]">
-      <slot />
-    </div>
-    <Toaster client:load />
-  </body>
-</html>
-
-<style>
-  html,
-  body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-  }
-</style> -->

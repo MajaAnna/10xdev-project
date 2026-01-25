@@ -19,12 +19,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     console.log("Logout API: supabase.auth.signOut() successful.");
-    // Supabase automatically clears the session cookie.
-    return new Response(null, {
+
+    // Return success response - cookies are already cleared by the Supabase client
+    // through the setAll callback in createSupabaseServerClient
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
   } catch (err) {
-    console.error("Logout API: Unexpected error:", err);
     console.error("Logout API: Unexpected error:", err);
     return new Response(JSON.stringify({ error: "An unexpected error occurred during logout." }), {
       status: 500,
