@@ -1,4 +1,4 @@
-import { defineMiddleware, type APIContext } from "astro:middleware";
+import { defineMiddleware } from "astro:middleware";
 import { createSupabaseServerClient } from "../db/supabase.server.ts";
 
 // Public paths - Auth API endpoints & Server-Rendered Astro Pages
@@ -16,7 +16,7 @@ const PUBLIC_PATHS = [
   "/api/auth/logout", // Logout should always be accessible
 ];
 
-export const onRequest = defineMiddleware(async ({ locals, cookies, url, request, redirect }: APIContext, next) => {
+export const onRequest = defineMiddleware(async ({ locals, cookies, url, request, redirect }, next) => {
   // Check if the path is an API endpoint for flashcards, generations, etc.
   // These should also be protected by authentication.
   const isFlashcardsApi = url.pathname.startsWith("/api/flashcards");

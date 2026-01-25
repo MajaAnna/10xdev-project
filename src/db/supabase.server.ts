@@ -9,7 +9,8 @@ export const createSupabaseServerClient = (context: { headers: Headers; cookies:
     {
       cookies: {
         get(key) {
-          return context.cookies.get(key).value;
+          const cookie = context.cookies.get(key);
+          return cookie ? cookie.value : undefined;
         },
         set(key, value, options) {
           context.cookies.set(key, value, options);
