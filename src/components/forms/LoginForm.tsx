@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -18,8 +18,6 @@ const LoginSchema = z.object({
 type LoginFormViewModel = z.infer<typeof LoginSchema>;
 
 export default function LoginForm() {
-  const [redirectTo, setRedirectTo] = useState<string | null>(null);
-
   const form = useForm<LoginFormViewModel>({
     resolver: zodResolver(LoginSchema),
     defaultValues: {
@@ -34,17 +32,24 @@ export default function LoginForm() {
 
   async function onSubmit(data: LoginFormViewModel) {
     try {
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
-      // Mock authentication
-      if (data.email === "test@example.com" && data.password === "password") {
+      if (response.ok) {
         toast.success("Logged in successfully!");
-        setRedirectTo("/cards"); // Set state to trigger navigation via useEffect
+        // Reload the page so the server-side middleware can pick up the new session cookie
+        // and redirect the user to the appropriate page (e.g., /cards).
+        window.location.reload();
       } else {
+        const errorData = await response.json();
         form.setError("root", {
           type: "manual",
-          message: "Invalid email or password.",
+          message: errorData.error || "An unexpected error occurred. Please try again.",
         });
       }
     } catch (error) {
@@ -55,12 +60,6 @@ export default function LoginForm() {
       });
     }
   }
-
-  useEffect(() => {
-    if (redirectTo) {
-      window.location.href = redirectTo;
-    }
-  }, [redirectTo]);
 
   return (
     <Card className="w-[380px]">
@@ -107,7 +106,7 @@ export default function LoginForm() {
       </CardContent>
       <CardFooter>
         <p className="text-sm text-center w-full">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <a href="/register" className="text-blue-600 hover:underline" aria-disabled={isSubmitting}>
             Register
           </a>

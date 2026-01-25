@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-// import { usePathname } from "astro/components"; // Usunięto import usePathname
 import { Menu } from "lucide-react";
 import {
   NavigationMenu,
@@ -11,45 +10,91 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import SignOutButton from "./SignOutButton"; // Import SignOutButton
 
-const TopNav: React.FC = () => {
-  const [pathname, setPathname] = useState(""); // Używamy stanu do przechowywania pathname
+interface User {
+  id: string;
+  email?: string;
+}
+
+interface TopNavProps {
+  user: User | null;
+}
+
+const TopNav: React.FC<TopNavProps> = ({ user }) => {
+  const [pathname, setPathname] = useState("");
 
   useEffect(() => {
-    setPathname(window.location.pathname); // Pobieramy pathname po zamontowaniu komponentu
+    setPathname(window.location.pathname);
   }, []);
 
-  const links = [
+  const loggedInLinks = [
     { href: "/generate", label: "Generator" },
     { href: "/study", label: "Study" },
     { href: "/profile", label: "Profile" },
+    { href: "/cards", label: "My Cards" }, // Added My Cards link
+  ];
+
+  const loggedOutLinks = [
+    { href: "/auth/login", label: "Zaloguj się" },
+    { href: "/auth/register", label: "Zarejestruj się" },
   ];
 
   return (
     <div className="border-b">
       <div className="container flex h-14 items-center px-4">
         <a href="/" className="mr-6 flex items-center space-x-2">
-          <span className="font-bold">Home</span>
+          <span className="font-bold">AI Cards</span>
         </a>
 
         {/* Desktop Navigation */}
-        <NavigationMenu className="hidden md:flex">
+        <NavigationMenu className="hidden md:flex flex-1">
           <NavigationMenuList>
-            {links.map((link) => (
-              <NavigationMenuItem key={link.href}>
-                <NavigationMenuLink
-                  href={link.href}
-                  className={cn(
-                    navigationMenuTriggerStyle(),
-                    pathname === link.href && "bg-accent text-accent-foreground"
-                  )}
-                >
-                  {link.label}
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            ))}
+            {user ? (
+              <>
+                {loggedInLinks.map((link) => (
+                  <NavigationMenuItem key={link.href}>
+                    <NavigationMenuLink
+                      href={link.href}
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        pathname === link.href && "bg-accent text-accent-foreground"
+                      )}
+                    >
+                      {link.label}
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                ))}
+              </>
+            ) : (
+              <>
+                {loggedOutLinks.map((link) => (
+                  <NavigationMenuItem key={link.href}>
+                    <NavigationMenuLink
+                      href={link.href}
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        pathname === link.href && "bg-accent text-accent-foreground"
+                      )}
+                    >
+                      {link.label}
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                ))}
+              </>
+            )}
           </NavigationMenuList>
         </NavigationMenu>
+
+        {/* User Info / Sign Out Button (Desktop) */}
+        <div className="hidden md:flex items-center justify-end space-x-4">
+          {user ? (
+            <>
+              <span className="text-sm font-medium">{user.email}</span>
+              <SignOutButton />
+            </>
+          ) : null}
+        </div>
 
         {/* Mobile Navigation */}
         <div className="flex-1 flex items-center justify-end md:hidden">
@@ -62,27 +107,46 @@ const TopNav: React.FC = () => {
             </SheetTrigger>
             <SheetContent side="right">
               <nav className="flex flex-col space-y-4 pt-6">
-                {links.map((link) => (
-                  <NavigationMenuLink
-                    key={link.href}
-                    href={link.href}
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      "w-full justify-start",
-                      pathname === link.href && "bg-accent text-accent-foreground"
-                    )}
-                  >
-                    {link.label}
-                  </NavigationMenuLink>
-                ))}
+                {user ? (
+                  <>
+                    {loggedInLinks.map((link) => (
+                      <NavigationMenuLink
+                        key={link.href}
+                        href={link.href}
+                        className={cn(
+                          navigationMenuTriggerStyle(),
+                          "w-full justify-start",
+                          pathname === link.href && "bg-accent text-accent-foreground"
+                        )}
+                      >
+                        {link.label}
+                      </NavigationMenuLink>
+                    ))}
+                    <div className="mt-4 pt-4 border-t">
+                      <span className="block text-sm font-medium mb-2">{user.email}</span>
+                      <SignOutButton />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {loggedOutLinks.map((link) => (
+                      <NavigationMenuLink
+                        key={link.href}
+                        href={link.href}
+                        className={cn(
+                          navigationMenuTriggerStyle(),
+                          "w-full justify-start",
+                          pathname === link.href && "bg-accent text-accent-foreground"
+                        )}
+                      >
+                        {link.label}
+                      </NavigationMenuLink>
+                    ))}
+                  </>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
-        </div>
-
-        {/* Placeholder for future user icon/dropdown if needed (desktop) */}
-        <div className="hidden md:flex flex-1 items-center justify-end space-x-4">
-          {/* Add a user icon or similar here */}
         </div>
       </div>
     </div>
