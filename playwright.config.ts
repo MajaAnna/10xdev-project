@@ -2,7 +2,24 @@ import { defineConfig, devices } from "@playwright/test";
 import dotenv from "dotenv";
 import path from "path";
 
-dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
+// Load .env file (contains both local dev and test variables)
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+
+// Validate required test environment variables
+const requiredEnvVars = ["TEST_SUPABASE_URL", "TEST_SUPABASE_ANON_KEY", "TEST_USER_EMAIL", "TEST_USER_PASSWORD"];
+
+const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
+
+if (missingVars.length > 0) {
+  console.error("\n❌ Missing required environment variables for E2E tests:\n");
+  missingVars.forEach((varName) => console.error(`   - ${varName}`));
+  console.error("\nAdd these to your .env file:");
+  console.error("\nTEST_SUPABASE_URL=https://your-project.supabase.co");
+  console.error("TEST_SUPABASE_ANON_KEY=your_anon_key");
+  console.error("TEST_USER_EMAIL=test@example.com");
+  console.error("TEST_USER_PASSWORD=YourPassword123!\n");
+  process.exit(1);
+}
 
 /**
  * Playwright configuration for E2E tests
@@ -67,6 +84,11 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         // Additional options for Chromium
         viewport: { width: 1280, height: 720 },
+        // Isolate browser context for each test to prevent state leakage
+        contextOptions: {
+          // Clear cookies and storage between tests
+          storageState: undefined,
+        },
       },
     },
   ],
@@ -79,5 +101,11 @@ export default defineConfig({
     timeout: 120 * 1000,
     stdout: "ignore",
     stderr: "pipe",
+    env: {
+      // Override Supabase config for e2e tests
+      // This makes the dev server use cloud Supabase instead of local
+      PUBLIC_SUPABASE_URL: process.env.TEST_SUPABASE_URL || process.env.PUBLIC_SUPABASE_URL || "",
+      PUBLIC_SUPABASE_ANON_KEY: process.env.TEST_SUPABASE_ANON_KEY || process.env.PUBLIC_SUPABASE_ANON_KEY || "",
+    },
   },
 });

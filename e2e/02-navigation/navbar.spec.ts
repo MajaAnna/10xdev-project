@@ -5,11 +5,27 @@ import { TEST_SELECTORS } from "../helpers/test-data";
 test.describe("Navbar and Navigation", () => {
   let authHelper: AuthHelper;
 
-  test.beforeEach(async ({ page }) => {
+  // Check credentials before running any tests
+  test.beforeAll(() => {
+    AuthHelper.checkCredentials();
+  });
+
+  test.beforeEach(async ({ page, context }) => {
+    // Clear all cookies and storage to ensure clean state
+    await context.clearCookies();
+    await context.clearPermissions();
+    
     authHelper = new AuthHelper(page);
   });
 
   test.describe("When logged out", () => {
+    // Run these tests serially to avoid state conflicts
+    test.describe.configure({ mode: "serial" });
+
+    test.beforeEach(async ({ context }) => {
+      // Ensure we're logged out by clearing all auth state
+      await context.clearCookies();
+    });
     test("should display navbar with logged-out links", async ({ page }) => {
       // Navigate to login page (public page) and wait for load
       await page.goto("/auth/login", { waitUntil: "networkidle" });
@@ -84,13 +100,24 @@ test.describe("Navbar and Navigation", () => {
   });
 
   test.describe("When logged in", () => {
-    test.beforeEach(async ({ page }) => {
+    // Run these tests serially to avoid state conflicts
+    test.describe.configure({ mode: "serial" });
+
+    test.beforeEach(async ({ page, context }) => {
+      // Clear any existing auth state first
+      await context.clearCookies();
+      
       // Initialize authHelper for this context
       authHelper = new AuthHelper(page);
       // Login before each test in this group
       await authHelper.loginWithTestUser();
       // Wait for page to be fully loaded after login
       await page.waitForLoadState("networkidle");
+    });
+
+    test.afterEach(async ({ context }) => {
+      // Clean up auth state after each test
+      await context.clearCookies();
     });
 
     test("should display navbar with logged-in links", async ({ page }) => {

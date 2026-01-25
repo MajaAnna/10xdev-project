@@ -2,110 +2,94 @@ import type { Page, Locator } from "@playwright/test";
 import { TEST_SELECTORS, TEST_CREDENTIALS } from "./test-data";
 
 /**
- * Helper class for authentication-related actions in E2E tests
+ * Helper class for authentication in navigation E2E tests
+ * Provides login functionality needed for testing logged-in navigation states
  */
 export class AuthHelper {
-  // Cached locators for better performance
   readonly loginForm: Locator;
   readonly loginEmailInput: Locator;
   readonly loginPasswordInput: Locator;
   readonly loginSubmitButton: Locator;
   readonly loginErrorMessage: Locator;
-  readonly registerForm: Locator;
-  readonly registerEmailInput: Locator;
-  readonly registerPasswordInput: Locator;
-  readonly registerConfirmPasswordInput: Locator;
-  readonly registerSubmitButton: Locator;
   readonly signoutButton: Locator;
 
   constructor(private page: Page) {
-    // Initialize locators once
     this.loginForm = page.locator(TEST_SELECTORS.loginForm);
     this.loginEmailInput = page.locator(TEST_SELECTORS.loginEmailInput);
     this.loginPasswordInput = page.locator(TEST_SELECTORS.loginPasswordInput);
     this.loginSubmitButton = page.locator(TEST_SELECTORS.loginSubmitButton);
     this.loginErrorMessage = page.locator(TEST_SELECTORS.loginErrorMessage);
-    this.registerForm = page.locator(TEST_SELECTORS.registerForm);
-    this.registerEmailInput = page.locator(TEST_SELECTORS.registerEmailInput);
-    this.registerPasswordInput = page.locator(TEST_SELECTORS.registerPasswordInput);
-    this.registerConfirmPasswordInput = page.locator(TEST_SELECTORS.registerConfirmPasswordInput);
-    this.registerSubmitButton = page.locator(TEST_SELECTORS.registerSubmitButton);
     this.signoutButton = page.locator(TEST_SELECTORS.signoutButton);
   }
 
   /**
-   * Navigate to login page
+   * Navigate to login page and wait for form to be ready
    */
-  async goToLoginPage() {
-    await this.page.goto("/auth/login");
+  private async goToLoginPage() {
+    await this.page.goto("/auth/login", { waitUntil: "networkidle" });
     await this.loginForm.waitFor({ state: "visible" });
-  }
-
-  /**
-   * Navigate to register page
-   */
-  async goToRegisterPage() {
-    await this.page.goto("/auth/register");
-    await this.registerForm.waitFor({ state: "visible" });
+    await this.loginEmailInput.waitFor({ state: "visible" });
+    await this.loginPasswordInput.waitFor({ state: "visible" });
+    await this.loginSubmitButton.waitFor({ state: "visible" });
   }
 
   /**
    * Fill and submit login form
    */
-  async login(email: string, password: string) {
-    await this.loginEmailInput.fill(email);
-    await this.loginPasswordInput.fill(password);
+  private async login(email: string, password: string) {
+    await this.loginEmailInput.clear();
+    await this.loginPasswordInput.clear();
+    await this.loginEmailInput.fill(email.trim());
+    await this.loginPasswordInput.fill(password.trim());
+    await this.page.waitForTimeout(100);
     await this.loginSubmitButton.click();
   }
 
   /**
-   * Login with test credentials and wait for successful redirect
+   * Login with test credentials for navigation tests
+   * Used to set up logged-in state before testing navigation
    */
   async loginWithTestUser() {
     await this.goToLoginPage();
     await this.login(TEST_CREDENTIALS.email, TEST_CREDENTIALS.password);
-    // Wait for redirect away from login page
+    await this.page.waitForTimeout(500);
+
+    // Check for errors
+    const formErrors = await this.page.locator('[data-slot="form-message"]').allTextContents();
+    if (formErrors.length > 0 && formErrors.some((e) => e.includes("Invalid email or password"))) {
+      throw new Error(
+        `Login failed. Check .env:\n` +
+          `- TEST_USER_EMAIL: ${TEST_CREDENTIALS.email}\n` +
+          `- TEST_USER_PASSWORD: ${TEST_CREDENTIALS.password ? "[SET]" : "[MISSING]"}\n` +
+          `- User must exist in Supabase with confirmed email`
+      );
+    }
+
+    // Wait for redirect and logout button
     await this.page.waitForURL((url) => !url.pathname.includes("/auth/login"), { timeout: 15000 });
-    // Wait for logout button to confirm login
     await this.signoutButton.waitFor({ state: "visible", timeout: 10000 });
   }
 
   /**
-   * Fill and submit register form
+   * Validate test credentials are configured
    */
-  async register(email: string, password: string, confirmPassword: string) {
-    await this.registerEmailInput.fill(email);
-    await this.registerPasswordInput.fill(password);
-    await this.registerConfirmPasswordInput.fill(confirmPassword);
-    await this.registerSubmitButton.click();
-  }
+  static checkCredentials() {
+    const issues: string[] = [];
 
-  /**
-   * Click logout button
-   */
-  async logout() {
-    await this.signoutButton.click();
-  }
+    if (!TEST_CREDENTIALS.email || TEST_CREDENTIALS.email === "test@example.com") {
+      issues.push("TEST_USER_EMAIL not set or using default");
+    }
 
-  /**
-   * Check if user is logged in (by checking if logout button exists)
-   */
-  async isLoggedIn(): Promise<boolean> {
-    return await this.signoutButton.isVisible();
-  }
+    if (!TEST_CREDENTIALS.password || TEST_CREDENTIALS.password === "TestPassword123!") {
+      issues.push("TEST_USER_PASSWORD not set or using default");
+    }
 
-  /**
-   * Wait for navigation after login/logout
-   * Uses 'load' state instead of 'networkidle' for better reliability
-   */
-  async waitForNavigation() {
-    await this.page.waitForLoadState("load");
-  }
+    if (issues.length > 0) {
+      throw new Error(
+        `Missing test credentials in .env:\n` + issues.map((i) => `  - ${i}`).join("\n") + `\n\nSee e2e/README.md`
+      );
+    }
 
-  /**
-   * Wait for a specific URL pattern after navigation
-   */
-  async waitForURL(pattern: RegExp, options?: { timeout?: number }) {
-    await this.page.waitForURL(pattern, options);
+    return true;
   }
 }
