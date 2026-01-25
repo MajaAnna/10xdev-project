@@ -19,6 +19,9 @@
     "http",
     "net"
   ],
+  "vitest.enable": true,
+  "vitest.commandLine": "npm run test",
+  "testing.automaticallyOpenPeekView": "never",
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },

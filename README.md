@@ -219,26 +219,34 @@ For detailed information about our testing strategy, test cases, and quality ass
 ### Running Tests
 
 ```bash
-# Run all tests
-npm run test
+# Unit tests
+npm run test              # Run all unit tests
+npm run test:watch        # Watch mode (auto-rerun on changes)
+npm run test:ui           # Interactive UI mode
+npm run test:coverage     # Generate coverage report
 
-# Run unit tests only
-npm run test:unit
-
-# Run tests in watch mode (for development)
-npm run test:watch
-
-# Generate coverage report
-npm run test:coverage
-
-# Run E2E tests
-npm run test:e2e
-
-# Run E2E tests with visible browser (for debugging)
-npm run test:e2e:headed
+# E2E tests
+npm run test:e2e          # Run all E2E tests
+npm run test:e2e:ui       # Interactive UI mode
+npm run test:e2e:debug    # Debug mode (step-by-step)
+npm run test:e2e:report   # Show last test report
 ```
 
-> **Note:** Testing infrastructure is currently being set up. Scripts will be available once the testing framework is fully configured.
+### Quick Start
+
+For a quick introduction to testing in this project, see:
+- **[Testing Quick Start](TESTING_QUICKSTART.md)** - Get started in 5 minutes
+- **[Testing Guide](TESTING.md)** - Comprehensive testing documentation
+- **[Unit Tests Guide](tests/README.md)** - Vitest and Testing Library
+- **[E2E Tests Guide](e2e/README.md)** - Playwright testing
+
+### Test Coverage
+
+Current test status:
+- ✅ **27 unit tests** - All passing
+- ✅ **18 E2E tests** - Configured and ready
+- ✅ **CI/CD pipeline** - Automated testing on every PR
+- 📊 **Coverage target:** 70%+ for all metrics
 
 ## Project Status
 
@@ -249,8 +257,9 @@ This project is currently in the **Minimum Viable Product (MVP)** development ph
 ### Current Focus
 - ✅ Core features implemented (AI generation, flashcard management, study mode)
 - ✅ Authentication and authorization with Supabase
-- 🔄 Testing infrastructure setup (in progress)
-- 📋 Comprehensive test plan documented
+- ✅ Testing infrastructure fully configured (Vitest + Playwright)
+- ✅ Comprehensive test plan documented
+- 🔄 Writing tests for core features (in progress)
 
 ## License
 

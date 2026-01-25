@@ -4,7 +4,9 @@
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
     "christian-kohler.path-intellisense",
-    "denoland.vscode-deno"
+    "denoland.vscode-deno",
+    "vitest.explorer",
+    "ms-playwright.playwright"
   ],
   "unwantedRecommendations": []
 }
