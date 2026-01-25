@@ -28,8 +28,8 @@ const TopNav: React.FC = () => {
   return (
     <div className="border-b">
       <div className="container flex h-14 items-center px-4">
-        <a href="/cards" className="mr-6 flex items-center space-x-2">
-          <span className="font-bold">My Cards</span>
+        <a href="/" className="mr-6 flex items-center space-x-2">
+          <span className="font-bold">Home</span>
         </a>
 
         {/* Desktop Navigation */}

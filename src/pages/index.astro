@@ -2,6 +2,22 @@
 import Layout from "../layouts/Layout.astro";
 ---
 
-<Layout title="Home">
-  <h1>Hello World</h1>
+<Layout title="Welcome to Flashcards App">
+  <main class="container mx-auto flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 text-center">
+    <h1 class="text-5xl font-bold mb-6 text-flashcardAccent">Welcome to Flashcards App!</h1>
+    <p class="text-xl mb-4 max-w-2xl text-secondary-foreground">
+      This is your ultimate tool for mastering new concepts.
+    </p>
+      To begin, you can create your personalized flashcards by visiting the <a href="/generate" class="text-flashcardAccent hover:underline font-semibold">Generate Card</a> section.
+    </p>
+    <p class="text-lg mb-2 text-muted-foreground">
+      Already have cards? Head over to <a href="/cards" class="text-flashcardAccent hover:underline font-semibold">My Cards</a> to review and manage your collection.
+    </p>
+    <p class="text-lg mb-2 text-muted-foreground">
+      Ready to test your knowledge? The <a href="/study" class="text-flashcardAccent hover:underline font-semibold">Study</a> page offers an interactive learning experience.
+    </p>
+    <p class="text-lg text-muted-foreground">
+      And don't forget to check your <a href="/profile" class="text-flashcardAccent hover:underline font-semibold">Profile</a> for account details and to securely log out.
+    </p>
+  </main>
 </Layout>
