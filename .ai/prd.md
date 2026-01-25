@@ -159,8 +159,9 @@ Następujące funkcjonalności celowo NIE wchodzą w zakres wersji MVP:
 - Kryteria akceptacji:
   1. Formularz rejestracji wymaga podania adresu e-mail i hasła (z potwierdzeniem).
   2. System waliduje poprawność formatu adresu e-mail i sprawdza, czy hasła są identyczne.
-  3. Po pomyślnej rejestracji, użytkownik jest automatycznie zalogowany.
-  4. Hasło jest przechowywane w bazie w postaci zaszyfrowanej.
+  3. Po pomyślnej rejestracji, na podany adres e-mail wysyłany jest link potwierdzający. Użytkownik jest informowany o konieczności potwierdzenia adresu.
+  4. Logowanie jest możliwe dopiero po kliknięciu w link aktywacyjny.
+  5. Hasło jest przechowywane w bazie w postaci zaszyfrowanej.
 
 ### US-012
 - Tytuł: Logowanie do aplikacji
