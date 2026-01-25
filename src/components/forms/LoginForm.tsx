@@ -107,7 +107,7 @@ export default function LoginForm() {
       <CardFooter>
         <p className="text-sm text-center w-full">
           Don&apos;t have an account?{" "}
-          <a href="/register" className="text-blue-600 hover:underline" aria-disabled={isSubmitting}>
+          <a href="/auth/register" className="text-blue-600 hover:underline" aria-disabled={isSubmitting}>
             Register
           </a>
         </p>

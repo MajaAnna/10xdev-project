@@ -5,18 +5,25 @@ import type { Database } from "./database.types.ts";
 export const createSupabaseServerClient = (context: { headers: Headers; cookies: AstroCookies }) => {
   const supabase = createServerClient<Database>(
     import.meta.env.PUBLIC_SUPABASE_URL,
-    import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        get(key) {
-          const cookie = context.cookies.get(key);
-          return cookie ? cookie.value : undefined;
+        getAll() {
+          const cookieHeader = context.headers.get("Cookie") ?? "";
+          if (!cookieHeader) return [];
+          return cookieHeader.split(";").map((cookie) => {
+            const [name, ...rest] = cookie.trim().split("=");
+            return { name, value: rest.join("=") };
+          });
         },
-        set(key, value, options) {
-          context.cookies.set(key, value, options);
-        },
-        remove(key, options) {
-          context.cookies.delete(key, options);
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            if (value === undefined || value === null) {
+              context.cookies.delete(name, options);
+            } else {
+              context.cookies.set(name, value, options);
+            }
+          });
         },
       },
     }
