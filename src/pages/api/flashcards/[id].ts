@@ -4,7 +4,6 @@ import { deleteFlashcard, updateFlashcard } from "../../../lib/services/flashcar
 import { NotFoundError } from "../../../lib/errors/common.errors"; // UnauthorizedError is removed
 import { UpdateFlashcardSchema } from "../../../lib/schemas/flashcard.schemas";
 import type { ApiResponseDto, DeleteFlashcardResponseDto, ErrorResponseDto, FlashcardDto } from "../../../types";
-import { DEFAULT_USER_ID } from "../../../db/supabase.client"; // Import DEFAULT_USER_ID
 
 export const prerender = false;
 
@@ -15,8 +14,19 @@ const flashcardParamsSchema = z.object({
 
 export const PATCH: APIRoute = async ({ params, request, locals }) => {
   try {
-    const userId = DEFAULT_USER_ID; // Use DEFAULT_USER_ID
-    const { supabase } = locals; // user is no longer destructured
+    if (!locals.user) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Authentication required",
+          },
+        }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    const userId = locals.user.id;
+    const { supabase } = locals;
 
     const { id } = flashcardParamsSchema.parse(params);
 
@@ -112,8 +122,19 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
 export async function DELETE({ params, locals }: APIContext): Promise<Response> {
   try {
     const { id: flashcardId } = flashcardParamsSchema.parse(params);
-    const userId = DEFAULT_USER_ID; // Use DEFAULT_USER_ID
-    const { supabase } = locals; // user is no longer destructured
+    if (!locals.user) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Authentication required",
+          },
+        }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    const userId = locals.user.id;
+    const { supabase } = locals;
 
     const deletedId = await deleteFlashcard(supabase, flashcardId, userId); // Use userId
 

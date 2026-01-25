@@ -44,7 +44,6 @@ import { createFlashcardSchema, listFlashcardsQuerySchema } from "../../lib/sche
 import { createFlashcard, listFlashcards } from "../../lib/services/flashcard.service";
 import { GenerationNotFoundError, FlashcardCreationError } from "../../lib/errors/flashcard.errors";
 import { ZodError } from "zod";
-import { DEFAULT_USER_ID } from "../../db/supabase.client";
 
 export const prerender = false;
 
@@ -66,8 +65,19 @@ export const prerender = false;
  */
 export const POST: APIRoute = async ({ request, locals }) => {
   try {
-    // Step 1: Get user ID (dev mode uses default)
-    const userId = DEFAULT_USER_ID;
+    // Step 1: Get user ID
+    if (!locals.user) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Authentication required",
+          },
+        } satisfies ErrorResponseDto),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    const userId = locals.user.id;
 
     // Step 2: Parse request body
     let body: unknown;
@@ -191,8 +201,19 @@ export const POST: APIRoute = async ({ request, locals }) => {
  */
 export const GET: APIRoute = async ({ url, locals }) => {
   try {
-    // Step 1: Get user ID (dev mode uses default)
-    const userId = DEFAULT_USER_ID;
+    // Step 1: Get user ID
+    if (!locals.user) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Authentication required",
+          },
+        } satisfies ErrorResponseDto),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    const userId = locals.user.id;
 
     // Step 2: Extract and validate query parameters
     const queryParams = {

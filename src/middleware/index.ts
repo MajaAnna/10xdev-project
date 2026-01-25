@@ -27,6 +27,9 @@ export const onRequest = defineMiddleware(async ({ locals, cookies, url, request
   // Create a Supabase server client instance for the current request
   const supabase = createSupabaseServerClient({ cookies, headers: request.headers });
 
+  // Store supabase client in locals for access in API routes
+  locals.supabase = supabase;
+
   // IMPORTANT: Always get user session first before any other operations
   const {
     data: { user },

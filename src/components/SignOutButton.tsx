@@ -32,7 +32,7 @@ export default function SignOutButton() {
   return (
     <Button onClick={handleSignOut} disabled={isLoading} variant="ghost">
       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      Wyloguj się
+      Log out
     </Button>
   );
 }

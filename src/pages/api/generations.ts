@@ -2,7 +2,6 @@ import type { APIRoute } from "astro";
 import { generationRequestSchema } from "../../lib/schemas/generation.schemas";
 import type { GenerationResponseDto } from "../../types"; // Removed OpenRouterRequest
 import { generateFlashcards } from "../../lib/services/generation.service";
-import { DEFAULT_USER_ID } from "../../db/supabase.client";
 
 export const POST: APIRoute = async ({ request, locals }) => {
   // Added locals
@@ -21,7 +20,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const { text, model } = validation.data;
-    const userId = DEFAULT_USER_ID;
+    if (!locals.user) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Authentication required",
+          },
+        }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    const userId = locals.user.id;
 
     const result = await generateFlashcards(locals.supabase, {
       // Pass locals.supabase

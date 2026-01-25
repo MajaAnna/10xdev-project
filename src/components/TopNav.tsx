@@ -48,7 +48,7 @@ const TopNav: React.FC<TopNavProps> = ({ user }) => {
         </a>
 
         {/* Desktop Navigation */}
-        <NavigationMenu className="hidden md:flex flex-1">
+        <NavigationMenu className="hidden md:flex">
           <NavigationMenuList>
             {user ? (
               <>
@@ -87,13 +87,8 @@ const TopNav: React.FC<TopNavProps> = ({ user }) => {
         </NavigationMenu>
 
         {/* User Info / Sign Out Button (Desktop) */}
-        <div className="hidden md:flex items-center justify-end space-x-4">
-          {user ? (
-            <>
-              <span className="text-sm font-medium">{user.email}</span>
-              <SignOutButton />
-            </>
-          ) : null}
+        <div className="hidden md:flex items-center ml-auto">
+          {user ? <SignOutButton /> : null}
         </div>
 
         {/* Mobile Navigation */}
@@ -123,7 +118,6 @@ const TopNav: React.FC<TopNavProps> = ({ user }) => {
                       </NavigationMenuLink>
                     ))}
                     <div className="mt-4 pt-4 border-t">
-                      <span className="block text-sm font-medium mb-2">{user.email}</span>
                       <SignOutButton />
                     </div>
                   </>
