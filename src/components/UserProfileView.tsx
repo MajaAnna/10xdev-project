@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-// import { useRouter } from "astro:router"; // Usunięto import useRouter
-import { supabaseClient } from "../db/supabase.client"; // Poprawiono import
+import { supabaseClient } from "../db/supabase.client";
 import { type UserProfileViewModel } from "../types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -13,14 +12,13 @@ const UserProfileView: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfileViewModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // const router = useRouter(); // Usunięto inicjalizację routera
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       const {
         data: { user },
         error,
-      } = await supabaseClient.auth.getUser(); // Użyto supabaseClient.auth
+      } = await supabaseClient.auth.getUser();
 
       if (error) {
         setError("Błąd podczas pobierania profilu użytkownika.");
@@ -30,7 +28,6 @@ const UserProfileView: React.FC = () => {
       }
 
       if (user) {
-        // Format join date nicely
         const joinDate = new Date(user.created_at).toLocaleDateString("pl-PL", {
           year: "numeric",
           month: "long",
@@ -52,18 +49,24 @@ const UserProfileView: React.FC = () => {
     };
 
     fetchUserProfile();
-  }, []); // Usunięto [router] z zależności useEffect
+  }, []);
 
   const handleSignOut = async () => {
     setIsLoading(true);
-    const { error } = await supabaseClient.auth.signOut(); // Użyto supabaseClient.auth
+    console.log("Attempting to sign out...");
+    const response = await fetch("/api/auth/logout", {
+      method: "POST",
+    });
 
-    if (error) {
-      setError("Błąd podczas wylogowywania.");
-      toast.error("Wystąpił błąd podczas wylogowywania. Spróbuj ponownie.");
-      setIsLoading(false);
+    if (response.ok) {
+      console.log("Server-side logout API call successful. Redirecting to login.");
+      window.location.href = "/auth/login";
     } else {
-      window.location.href = "/auth/login"; // Zastąpiono router.push
+      const errorData = await response.json();
+      console.error("Server-side logout API call failed:", errorData);
+      setError(errorData.error || "Błąd podczas wylogowywania.");
+      toast.error(errorData.error || "Wystąpił błąd podczas wylogowywania. Spróbuj ponownie.");
+      setIsLoading(false);
     }
   };
 
