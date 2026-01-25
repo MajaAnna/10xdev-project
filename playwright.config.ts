@@ -1,4 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 
 /**
  * Playwright configuration for E2E tests
@@ -69,7 +73,7 @@ export default defineConfig({
 
   // Start dev server before tests
   webServer: {
-    command: "npm run dev",
+    command: "npm run dev:e2e",
     url: "http://localhost:4321",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
