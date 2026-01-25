@@ -9,7 +9,7 @@ interface SignOutButtonProps {
 
 export default function SignOutButton({ onSignOut, isLoading }: SignOutButtonProps) {
   return (
-    <Button onClick={onSignOut} disabled={isLoading} variant="ghost">
+    <Button onClick={onSignOut} disabled={isLoading} variant="ghost" data-testid="signout-button">
       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       Log out
     </Button>

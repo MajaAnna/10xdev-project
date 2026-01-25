@@ -85,7 +85,7 @@ const RegisterForm = () => {
   };
 
   return (
-    <Card className="w-[380px]">
+    <Card className="w-[380px]" data-testid="register-form">
       <CardHeader>
         <CardTitle>Create an Account</CardTitle>
         <CardDescription>
@@ -103,7 +103,13 @@ const RegisterForm = () => {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="name@example.com" {...field} disabled={isSubmitting} />
+                    <Input
+                      type="email"
+                      placeholder="name@example.com"
+                      {...field}
+                      disabled={isSubmitting}
+                      data-testid="register-email-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -116,7 +122,13 @@ const RegisterForm = () => {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting} />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      {...field}
+                      disabled={isSubmitting}
+                      data-testid="register-password-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -129,14 +141,22 @@ const RegisterForm = () => {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting} />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      {...field}
+                      disabled={isSubmitting}
+                      data-testid="register-confirm-password-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            {form.formState.errors.root && <FormMessage>{form.formState.errors.root.message}</FormMessage>}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {form.formState.errors.root && (
+              <FormMessage data-testid="register-error-message">{form.formState.errors.root.message}</FormMessage>
+            )}
+            <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="register-submit-button">
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Register
             </Button>
@@ -146,7 +166,12 @@ const RegisterForm = () => {
       <CardFooter>
         <p className="text-sm text-center w-full">
           Already have an account?{" "}
-          <a href="/auth/login" className="text-blue-600 hover:underline" aria-disabled={isSubmitting}>
+          <a
+            href="/auth/login"
+            className="text-blue-600 hover:underline"
+            aria-disabled={isSubmitting}
+            data-testid="register-login-link"
+          >
             Log in
           </a>
         </p>

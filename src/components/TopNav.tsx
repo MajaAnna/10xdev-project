@@ -64,9 +64,9 @@ const TopNav: React.FC<TopNavProps> = ({ user }) => {
   ];
 
   return (
-    <div className="border-b">
+    <div className="border-b" data-testid="top-nav">
       <div className="container flex h-14 items-center px-4">
-        <a href="/" className="mr-6 flex items-center space-x-2">
+        <a href="/" className="mr-6 flex items-center space-x-2" data-testid="nav-home-link">
           <span className="font-bold">Home</span>
         </a>
 
@@ -83,6 +83,7 @@ const TopNav: React.FC<TopNavProps> = ({ user }) => {
                         navigationMenuTriggerStyle(),
                         pathname === link.href && "bg-accent text-accent-foreground"
                       )}
+                      data-testid={`nav-${link.label.toLowerCase().replace(/\s+/g, "-")}-link`}
                     >
                       {link.label}
                     </NavigationMenuLink>
@@ -99,6 +100,7 @@ const TopNav: React.FC<TopNavProps> = ({ user }) => {
                         navigationMenuTriggerStyle(),
                         pathname === link.href && "bg-accent text-accent-foreground"
                       )}
+                      data-testid={`nav-${link.label.toLowerCase().replace(/\s+/g, "-")}-link`}
                     >
                       {link.label}
                     </NavigationMenuLink>

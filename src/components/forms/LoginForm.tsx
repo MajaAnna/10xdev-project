@@ -62,7 +62,7 @@ export default function LoginForm() {
   }
 
   return (
-    <Card className="w-[380px]">
+    <Card className="w-[380px]" data-testid="login-form">
       <CardHeader>
         <CardTitle>Login</CardTitle>
         <CardDescription>Log in to your account to access your flashcards.</CardDescription>
@@ -77,7 +77,12 @@ export default function LoginForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="test@example.com" {...field} disabled={isSubmitting} />
+                    <Input
+                      placeholder="test@example.com"
+                      {...field}
+                      disabled={isSubmitting}
+                      data-testid="login-email-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -90,14 +95,22 @@ export default function LoginForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} disabled={isSubmitting} />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      {...field}
+                      disabled={isSubmitting}
+                      data-testid="login-password-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            {form.formState.errors.root && <FormMessage>{form.formState.errors.root.message}</FormMessage>}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {form.formState.errors.root && (
+              <FormMessage data-testid="login-error-message">{form.formState.errors.root.message}</FormMessage>
+            )}
+            <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="login-submit-button">
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Login
             </Button>
@@ -107,7 +120,12 @@ export default function LoginForm() {
       <CardFooter>
         <p className="text-sm text-center w-full">
           Don&apos;t have an account?{" "}
-          <a href="/auth/register" className="text-blue-600 hover:underline" aria-disabled={isSubmitting}>
+          <a
+            href="/auth/register"
+            className="text-blue-600 hover:underline"
+            aria-disabled={isSubmitting}
+            data-testid="login-register-link"
+          >
             Register
           </a>
         </p>
