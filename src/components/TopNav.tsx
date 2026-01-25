@@ -53,9 +53,9 @@ const TopNav: React.FC<TopNavProps> = ({ user }) => {
 
   const loggedInLinks = [
     { href: "/generate", label: "Generator" },
+    { href: "/cards", label: "My Cards" },
     { href: "/study", label: "Study" },
     { href: "/profile", label: "Profile" },
-    { href: "/cards", label: "My Cards" }, // Added My Cards link
   ];
 
   const loggedOutLinks = [
