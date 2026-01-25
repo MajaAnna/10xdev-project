@@ -4,13 +4,18 @@
 
 Celem projektu jest stworzenie aplikacji internetowej w modelu MVP (Minimum Viable Product), która rozwiązuje problem czasochłonnego, ręcznego tworzenia fiszek edukacyjnych. Kluczową funkcjonalnością aplikacji jest generator fiszek oparty na sztucznej inteligencji (AI), który automatycznie tworzy propozycje fiszek na podstawie tekstu wklejonego przez użytkownika.
 
-Aplikacja umożliwi również manualne tworzenie i edycję fiszek, a także zaoferuje system recenzji propozycji od AI, dając użytkownikowi pełną kontrolę nad jakością materiałów. Wszystkie zapisane fiszki będą przechowywane na koncie użytkownika i dostępne w ramach prostego trybu nauki, który w przyszłości zostanie zintegrowany z gotowym algorytmem powtórek (spaced repetition) typu open-source.
+Aplikacja umożliwia korzystanie z kluczowych funkcjonalności wyłącznie zarejestrowanym i zalogowanym użytkownikom. Dla niezalogowanych użytkowników dostępne są tylko panele rejestracji i logowania.
 
 ## 2. Problem użytkownika
 
 Głównym problemem, który rozwiązuje aplikacja, jest fakt, że manualne tworzenie wysokiej jakości fiszek jest procesem żmudnym i czasochłonnym. To zniechęca wiele osób, w tym uczniów, studentów i profesjonalistów, do korzystania z jednej z najefektywniejszych metod nauki, jaką są regularne powtórki (spaced repetition). Użytkownicy posiadają już materiały do nauki w formie cyfrowej (notatki, artykuły, fragmenty e-booków) i potrzebują narzędzia, które pozwoli im szybko i bez wysiłku przekształcić te treści w zestawy interaktywnych fiszek.
 
 ## 3. Wymagania funkcjonalne
+
+### 3.0. Dostęp i Autentykacja
+- Aplikacja jest przeznaczona wyłącznie dla zarejestrowanych i zalogowanych użytkowników.
+- Niezalogowany użytkownik ma dostęp jedynie do stron rejestracji i logowania.
+- Próba dostępu do jakiejkolwiek innej strony aplikacji bez uwierzytelnienia skutkuje przekierowaniem do panelu logowania.
 
 ### 3.1. Generator Fiszki z AI
 - Użytkownik może wkleić w dedykowane pole tekst o długości od 100 do 10 000 znaków.
