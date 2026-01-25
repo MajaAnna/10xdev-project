@@ -358,3 +358,21 @@ export async function deleteFlashcard(supabase: SupabaseClient, flashcardId: num
 
   return flashcardId;
 }
+
+/**
+ * Counts the total number of flashcards for a given user.
+ *
+ * @param supabase - The Supabase client instance.
+ * @param userId - The ID of the user whose flashcards are to be counted.
+ * @returns The total number of flashcards for the user.
+ * @throws {Error} If the underlying `listFlashcards` operation fails.
+ */
+export async function countFlashcardsForUser(supabase: SupabaseClient, userId: string): Promise<number> {
+  const { totalCount } = await listFlashcards(supabase, {
+    user_id: userId,
+    page: 1, // We only need the total count, so page and limit don't matter much
+    limit: 1, // Smallest limit to minimize data transfer if only count is needed
+  });
+  return totalCount;
+}
+

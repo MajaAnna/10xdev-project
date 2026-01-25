@@ -44,7 +44,7 @@ const TopNav: React.FC<TopNavProps> = ({ user }) => {
     <div className="border-b">
       <div className="container flex h-14 items-center px-4">
         <a href="/" className="mr-6 flex items-center space-x-2">
-          <span className="font-bold">AI Cards</span>
+          <span className="font-bold">Home</span>
         </a>
 
         {/* Desktop Navigation */}

@@ -7,6 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import UserProfileDisplay from "./UserProfileDisplay";
 import SignOutButton from "./SignOutButton";
 import { toast } from "sonner";
+import { countFlashcardsForUser } from "../lib/services/flashcard.service";
 
 const UserProfileView: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfileViewModel | null>(null);
@@ -25,7 +26,6 @@ const UserProfileView: React.FC = () => {
         setError("Błąd podczas pobierania profilu użytkownika.");
         setIsLoading(false);
         // Redirect to login if not authenticated
-        window.location.href = "/auth/login"; // Zastąpiono router.push
         return;
       }
 
@@ -37,13 +37,16 @@ const UserProfileView: React.FC = () => {
           day: "numeric",
         });
 
+        const numberOfCards = await countFlashcardsForUser(supabaseClient, user.id);
+
         setUserProfile({
           email: user.email || "N/A",
           joinDate: joinDate,
+          numberOfCards: numberOfCards,
         });
       } else {
-        // No user session, redirect to login
-        window.location.href = "/auth/login"; // Zastąpiono router.push
+        // No user session. The middleware should handle redirection if unauthenticated.
+        // Display a generic message or handle through conditional rendering if userProfile remains null.
       }
       setIsLoading(false);
     };

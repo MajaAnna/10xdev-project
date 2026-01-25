@@ -357,6 +357,7 @@ export const isManualSource = (source: FlashcardSource): source is Extract<Flash
 export interface UserProfileViewModel {
   email: string;
   joinDate: string;
+  numberOfCards: number;
 }
 
 // ============================================================================

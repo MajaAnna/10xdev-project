@@ -15,6 +15,9 @@ const UserProfileDisplay: React.FC<UserProfileDisplayProps> = ({ userProfile }) 
       <p>
         <span className="font-semibold">Data dołączenia:</span> {userProfile.joinDate}
       </p>
+      <p>
+        <span className="font-semibold">Liczba kart:</span> {userProfile.numberOfCards}
+      </p>
     </div>
   );
 };
