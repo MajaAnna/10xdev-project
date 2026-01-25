@@ -11,8 +11,10 @@ test.describe("Logout Flow", () => {
     // Login before each test using optimized helper method
     await authHelper.loginWithTestUser();
 
-    // Verify user is logged in
-    await expect(authHelper.signoutButton).toBeVisible({ timeout: 10000 });
+    // Verify user is logged in - if this fails, check your .env.test credentials
+    await expect(authHelper.signoutButton).toBeVisible({ 
+      timeout: 10000,
+    });
   });
 
   test("should display logout button when logged in", async () => {

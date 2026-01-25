@@ -28,11 +28,14 @@ test.describe("Register Flow", () => {
     await authHelper.registerEmailInput.fill("invalid-email");
     await authHelper.registerPasswordInput.fill("password123");
     await authHelper.registerConfirmPasswordInput.fill("password123");
+
+    // Click submit and wait for the button to be enabled again (validation complete)
     await authHelper.registerSubmitButton.click();
 
-    // Check for validation error
-    await expect(page.locator('[data-slot="form-message"]').first()).toBeVisible();
-    await expect(page.locator('[data-slot="form-message"]').first()).toContainText(/invalid.*email/i);
+    // Wait for form validation to complete and error message to appear
+    const errorMessage = page.locator('[data-slot="form-message"]').first();
+    await expect(errorMessage).toBeVisible({ timeout: 10000 });
+    await expect(errorMessage).toContainText(/invalid.*email/i);
   });
 
   test("should show validation error for short password", async ({ page }) => {
@@ -42,11 +45,14 @@ test.describe("Register Flow", () => {
     await authHelper.registerEmailInput.fill("test@example.com");
     await authHelper.registerPasswordInput.fill("short");
     await authHelper.registerConfirmPasswordInput.fill("short");
+
+    // Click submit
     await authHelper.registerSubmitButton.click();
 
-    // Check for validation error
-    await expect(page.locator('[data-slot="form-message"]')).toBeVisible();
-    await expect(page.locator('[data-slot="form-message"]')).toContainText(/password.*8.*character/i);
+    // Wait for form validation to complete and error message to appear
+    const errorMessage = page.locator('[data-slot="form-message"]').first();
+    await expect(errorMessage).toBeVisible({ timeout: 10000 });
+    await expect(errorMessage).toContainText(/password.*8.*character/i);
   });
 
   test("should show validation error for mismatched passwords", async ({ page }) => {
@@ -56,21 +62,25 @@ test.describe("Register Flow", () => {
     await authHelper.registerEmailInput.fill("test@example.com");
     await authHelper.registerPasswordInput.fill("password123");
     await authHelper.registerConfirmPasswordInput.fill("different123");
+
+    // Click submit
     await authHelper.registerSubmitButton.click();
 
-    // Check for validation error
-    await expect(page.locator('[data-slot="form-message"]')).toBeVisible();
-    await expect(page.locator('[data-slot="form-message"]')).toContainText(/password.*match/i);
+    // Wait for form validation to complete and error message to appear
+    const errorMessage = page.locator('[data-slot="form-message"]').first();
+    await expect(errorMessage).toBeVisible({ timeout: 10000 });
+    await expect(errorMessage).toContainText(/password.*match/i);
   });
 
   test("should show error for already registered email", async ({ page }) => {
     await authHelper.goToRegisterPage();
 
-    // Try to register with existing email
-    await authHelper.register(TEST_CREDENTIALS.email, "TestPassword123!", "TestPassword123!");
+    // Try to register with existing email (should fail because user already exists)
+    await authHelper.register(TEST_CREDENTIALS.email, TEST_CREDENTIALS.password, TEST_CREDENTIALS.password);
 
-    // Wait for error message
-    await expect(page.locator(TEST_SELECTORS.registerErrorMessage)).toBeVisible({ timeout: 10000 });
+    // Wait for API call to complete and error message to appear
+    const errorMessage = page.locator(TEST_SELECTORS.registerErrorMessage);
+    await expect(errorMessage).toBeVisible({ timeout: 10000 });
   });
 
   test("should navigate to login page when clicking login link", async ({ page }) => {
@@ -90,8 +100,8 @@ test.describe("Register Flow", () => {
     const uniqueEmail = `test-${Date.now()}@example.com`;
 
     await authHelper.registerEmailInput.fill(uniqueEmail);
-    await authHelper.registerPasswordInput.fill("TestPassword123!");
-    await authHelper.registerConfirmPasswordInput.fill("TestPassword123!");
+    await authHelper.registerPasswordInput.fill(TEST_CREDENTIALS.password);
+    await authHelper.registerConfirmPasswordInput.fill(TEST_CREDENTIALS.password);
 
     // Click submit and immediately check if button is disabled
     await authHelper.registerSubmitButton.click();
@@ -106,7 +116,8 @@ test.describe("Register Flow", () => {
     // Try to submit empty form
     await authHelper.registerSubmitButton.click();
 
-    // Check for validation errors - should show at least one error message
-    await expect(page.locator('[data-slot="form-message"]').first()).toBeVisible();
+    // Wait for form validation to complete and error message to appear
+    const errorMessage = page.locator('[data-slot="form-message"]').first();
+    await expect(errorMessage).toBeVisible({ timeout: 10000 });
   });
 });
