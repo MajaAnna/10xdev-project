@@ -35,7 +35,6 @@ export function useFlashcardGenerator() {
       }
 
       const data: GenerationResponseDto = await response.json();
-      console.log("[useFlashcardGenerator] Received data from API:", data);
 
       setCandidates(data.candidates.map((c) => ({ ...c, id: crypto.randomUUID() })));
       setGenerationId(data.generation_id);

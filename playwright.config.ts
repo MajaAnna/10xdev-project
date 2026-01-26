@@ -13,11 +13,6 @@ const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
 if (missingVars.length > 0) {
   console.error("\n❌ Missing required environment variables for E2E tests:\n");
   missingVars.forEach((varName) => console.error(`   - ${varName}`));
-  console.error("\nAdd these to your .env file:");
-  console.error("\nTEST_SUPABASE_URL=https://your-project.supabase.co");
-  console.error("TEST_SUPABASE_ANON_KEY=your_anon_key");
-  console.error("TEST_USER_EMAIL=test@example.com");
-  console.error("TEST_USER_PASSWORD=YourPassword123!\n");
   process.exit(1);
 }
 

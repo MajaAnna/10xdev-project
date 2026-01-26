@@ -83,7 +83,6 @@ async function callOpenRouterAPI(sourceText: string, model: string): Promise<Fla
 
   // Use mock data for development/testing
   if (useMock) {
-    console.log("🤖 Using mock AI service (OPENROUTER_API_KEY not set or MOCK_AI_SERVICE=true)");
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000));
     return generateMockCandidates(sourceText);

@@ -120,6 +120,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     // Step 4: Create flashcard via service
+    if (!locals.supabase) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "INTERNAL_ERROR",
+            message: "Supabase client not initialized",
+          },
+        } satisfies ErrorResponseDto),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const flashcard = await createFlashcard(locals.supabase, {
       ...validatedData,
       user_id: userId,
@@ -244,6 +256,18 @@ export const GET: APIRoute = async ({ url, locals }) => {
     }
 
     // Step 3: Fetch flashcards via service
+    if (!locals.supabase) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Supabase client not available in request context",
+          },
+        } satisfies ErrorResponseDto),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const { flashcards, totalCount } = await listFlashcards(locals.supabase, {
       user_id: userId,
       page: validatedParams.page,

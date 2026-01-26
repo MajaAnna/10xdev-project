@@ -3,6 +3,7 @@ import { AuthHelper } from "../helpers/auth.helper";
 import { TEST_SELECTORS } from "../helpers/test-data";
 
 test.describe("Navbar and Navigation", () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let authHelper: AuthHelper;
 
   // Check credentials before running any tests

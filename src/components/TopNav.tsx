@@ -33,13 +33,11 @@ const TopNav: React.FC<TopNavProps> = ({ user }) => {
 
   const handleSignOut = async () => {
     setIsLoading(true);
-    console.log("TopNav: Attempting to sign out...");
     const response = await fetch("/api/auth/logout", {
       method: "POST",
     });
 
     if (response.ok) {
-      console.log("TopNav: Server-side logout API call successful. Redirecting to login.");
       // Close the mobile sheet if it's open
       sheetCloseBtnRef.current?.click();
       window.location.href = "/auth/login";

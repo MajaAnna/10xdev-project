@@ -197,7 +197,10 @@ describe("generation.schemas", () => {
 
       it("should reject flashcards with invalid items", () => {
         const data = {
-          flashcards: [{ front: "Q1", back: "A1" }, { front: "", back: "A2" }],
+          flashcards: [
+            { front: "Q1", back: "A1" },
+            { front: "", back: "A2" },
+          ],
         };
 
         const result = generationResponseSchema.safeParse(data);
@@ -354,4 +357,3 @@ describe("generation.schemas", () => {
     });
   });
 });
-

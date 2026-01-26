@@ -20,6 +20,7 @@ describe("utils", () => {
     });
 
     it("should filter out false/null/undefined values", () => {
+      // eslint-disable-next-line no-constant-binary-expression
       const result = cn("base-class", false && "false-class", null, undefined, "valid-class");
       expect(result).toBe("base-class valid-class");
     });
@@ -85,4 +86,3 @@ describe("utils", () => {
     });
   });
 });
-

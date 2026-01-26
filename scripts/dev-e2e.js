@@ -21,22 +21,13 @@ const testUrl = process.env.TEST_SUPABASE_URL;
 const testKey = process.env.TEST_SUPABASE_ANON_KEY;
 
 if (!testUrl || !testKey) {
-  console.error("\n❌ ERROR: Missing E2E test environment variables\n");
-  console.error("Required in .env:");
-  console.error("  - TEST_SUPABASE_URL");
-  console.error("  - TEST_SUPABASE_ANON_KEY\n");
-  console.error("Run 'npm run test:e2e:verify' for more details.\n");
+  console.error("\n❌ ERROR: Missing E2E test environment variables: TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY");
   process.exit(1);
 }
 
-console.log("\n" + "=".repeat(70));
 console.log("🚀 Starting Astro dev server for E2E tests");
-console.log("=".repeat(70));
-console.log("\n📡 Supabase Configuration:");
-console.log(`  URL: ${testUrl}`);
-console.log(`  Key: ${testKey.substring(0, 30)}...`);
+console.log(`\n📡 Supabase Configuration: URL: ${testUrl}, Key: ${testKey.substring(0, 30)}...`);
 console.log("\n⚠️  IMPORTANT: The client will connect to the URL above, NOT your local Supabase!");
-console.log("=".repeat(70) + "\n");
 
 // Start Astro with mapped environment variables
 const astro = spawn("npx", ["astro", "dev"], {
@@ -62,4 +53,3 @@ process.on("SIGTERM", () => {
 astro.on("exit", (code) => {
   process.exit(code || 0);
 });
-

@@ -261,6 +261,14 @@ This project is currently in the **Minimum Viable Product (MVP)** development ph
 - ✅ Comprehensive test plan documented
 - 🔄 Writing tests for core features (in progress)
 
+### TO DO:
+- Refactor
+- E2E tests
+- Unit tests development
+- Save All - batch save process
+- Study sessions
+- Design
+
 ## License
 
 This project is licensed under the **MIT License**.
