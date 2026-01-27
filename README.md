@@ -2,6 +2,8 @@
 
 An intelligent flashcard generator designed to accelerate your learning process. AI Cards transforms your notes, articles, and study materials into a deck of flashcards in seconds.
 
+This application is a result of a training - it still possesses some experimental code and files left for learning purposes.
+
 ## Table of Contents
 
 - [Project Description](#project-description)
@@ -264,6 +266,7 @@ This project is currently in the **Minimum Viable Product (MVP)** development ph
 ### TO DO:
 - Refactor
 - E2E tests
+- Teardown - cleaning db after e2e
 - Unit tests development
 - Save All - batch save process
 - Study sessions
