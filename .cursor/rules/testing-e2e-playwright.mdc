@@ -1,0 +1,41 @@
+---
+description: E2E testing guidelines using Playwright
+globs:
+alwaysApply: true
+---
+## TESTING
+
+### Guidelines for E2E
+
+#### PLAYWRIGHT
+
+- Initialize configuration only with Chromium/Desktop Chrome browser
+- Use browser contexts for isolating test environments
+- Implement the Page Object Model for maintainable tests
+- Use locators for resilient element selection
+- Leverage API testing for backend validation
+- Implement visual comparison with expect(page).toHaveScreenshot()
+- Use the codegen tool for test recording
+- Leverage trace viewer for debugging test failures
+- Implement test hooks for setup and teardown
+- Use expect assertions with specific matchers
+- Leverage parallel execution for faster test runs
+
+#### ENVIRONMENT CONFIGURATION
+
+- E2E tests use separate environment variables prefixed with `TEST_*`
+- The `dev:e2e` script maps `TEST_SUPABASE_*` to `PUBLIC_SUPABASE_*` for client-side code
+- Always use `npm run dev:e2e` (not `npm run dev`) when running E2E tests
+- Run `npm run test:e2e:verify` to check environment configuration before testing
+- Environment variables are baked into the client bundle at dev server start time
+- Restart the dev server after changing environment variables
+
+#### TEST STRUCTURE
+
+- Use Page Object Model pattern (see `e2e/helpers/auth.helper.ts`)
+- Store test data and selectors in `e2e/helpers/test-data.ts`
+- Use descriptive test names that explain what is being tested
+- Group related tests with `test.describe()`
+- Use `test.beforeEach()` and `test.afterEach()` for setup/teardown
+- Clear cookies and storage between tests to ensure clean state
+

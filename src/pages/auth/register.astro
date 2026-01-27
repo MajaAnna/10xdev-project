@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import RegisterForm from "@/components/forms/RegisterForm";
+---
+
+<Layout title="Register an Account">
+  <main class="flex-grow flex items-center justify-center">
+    <RegisterForm client:load />
+  </main>
+</Layout>

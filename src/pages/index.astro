@@ -1,8 +1,39 @@
 ---
-import Welcome from "../components/Welcome.astro";
 import Layout from "../layouts/Layout.astro";
+
+const user = Astro.locals.user;
 ---
 
-<Layout>
-  <Welcome />
+<Layout title="Welcome to Flashcards App">
+  <main class="container mx-auto flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4 text-center">
+    <h1 class="text-5xl font-bold mb-6 text-flashcardAccent">
+      {user ? "Welcome back!" : "Welcome to Flashcards App!"}
+    </h1>
+    <p class="text-xl mb-8 max-w-2xl text-secondary-foreground">
+      This is your ultimate tool for mastering new concepts. To begin, you can create your personalized flashcards by
+      visiting the <a href="/generate" class="text-flashcardAccent hover:underline font-semibold">Generate Card</a> section.
+    </p>
+
+    <div class="grid gap-4 max-w-2xl w-full text-left">
+      <a href="/generate" class="block p-4 border rounded-lg hover:bg-accent transition-colors no-underline">
+        <h2 class="text-xl font-semibold mb-2 text-flashcardAccent">📝 Generate Cards</h2>
+        <p class="text-muted-foreground">Create personalized flashcards to master new concepts.</p>
+      </a>
+
+      <a href="/cards" class="block p-4 border rounded-lg hover:bg-accent transition-colors no-underline">
+        <h2 class="text-xl font-semibold mb-2 text-flashcardAccent">🗂️ My Cards</h2>
+        <p class="text-muted-foreground">Review and manage your flashcard collection.</p>
+      </a>
+
+      <a href="/study" class="block p-4 border rounded-lg hover:bg-accent transition-colors no-underline">
+        <h2 class="text-xl font-semibold mb-2 text-flashcardAccent">📚 Study</h2>
+        <p class="text-muted-foreground">Test your knowledge with an interactive learning experience.</p>
+      </a>
+
+      <a href="/profile" class="block p-4 border rounded-lg hover:bg-accent transition-colors no-underline">
+        <h2 class="text-xl font-semibold mb-2 text-flashcardAccent">👤 Profile</h2>
+        <p class="text-muted-foreground">View your account details and manage settings.</p>
+      </a>
+    </div>
+  </main>
 </Layout>
